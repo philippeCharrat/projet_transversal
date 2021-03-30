@@ -1,2 +1,5 @@
-# projet_transversal
-Dépôt utilisé dans le cadre du projet transversal de 4ième année du cursus Science du Numérique de CPE Lyon
+# Projet Robot « Sem821»
+###### Equipe D2 - 30/03/2021
+
+### Cahiers des charges 
+En cours ... 
