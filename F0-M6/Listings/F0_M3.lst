@@ -1,0 +1,49 @@
+C51 COMPILER V9.60.0.0   F0_M3                                                             03/30/2021 16:26:06 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE F0_M3
+OBJECT MODULE PLACED IN .\Objects\F0_M3.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE F0_M3.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listin
+                    -gs\F0_M3.lst) TABS(2) OBJECT(.\Objects\F0_M3.obj)
+
+line level    source
+
+   1          //-----------------------------------------------------------------------------
+   2          // M3.c
+   3          //-----------------------------------------------------------------------------
+   4          // AUTH: Lecourt-Capdeville 
+   5          // DATE: 02/03/2021
+   6          //
+   7          // Target: C8051F02x
+   8          // Tool chain: KEIL Microvision 4
+   9          //
+  10          //-----------------------------------------------------------------------------
+  11          // Declarations Registres et Bits de l'espace SFR
+  12          #include <C8051F020.h>
+  13          #include "c8051F020_SFR16.h"
+  14          #include "M3_Lib_Config_Globale_8051F020.h"
+  15          
+  16          //Variables globales
+  17          char Angle_actuel;
+  18          char temps;
+  19          
+  20          unsigned char CDE_Servo_H (char Angle){
+  21   1        AngleAVise = 10*Angle;
+*** ERROR C202 IN LINE 21 OF F0_M3.c: 'AngleAVise': undefined identifier
+  22   1        AngleAVise = AngleAVise + 1500;
+*** ERROR C202 IN LINE 22 OF F0_M3.c: 'AngleAVise': undefined identifier
+  23   1        AngleAVise = AngleAVise*1000;
+*** ERROR C202 IN LINE 23 OF F0_M3.c: 'AngleAVise': undefined identifier
+  24   1        AngleAVise = AngleAVise/543;
+*** ERROR C202 IN LINE 24 OF F0_M3.c: 'AngleAVise': undefined identifier
+  25   1        if (Angle-Angle_actuel > 0){
+  26   2         temps = (Angle-Angle_actuel)*23/60;
+  27   2        }
+  28   1        else{
+  29   2         temps = (Angle_actuel-Angle)*23/60;
+  30   2        }
+  31   1        Angle_actuel = Angle;
+  32   1        return temps;
+  33   1      } 
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  4 ERROR(S)

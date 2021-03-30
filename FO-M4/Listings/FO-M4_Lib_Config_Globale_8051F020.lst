@@ -1,0 +1,158 @@
+C51 COMPILER V9.60.0.0   FO_M4_LIB_CONFIG_GLOBALE_8051F020                                 03/30/2021 16:03:44 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE FO_M4_LIB_CONFIG_GLOBALE_8051F020
+OBJECT MODULE PLACED IN .\Objects\FO-M4_Lib_Config_Globale_8051F020.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE FO-M4_Lib_Config_Globale_8051F020.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJEC
+                    -TEXTEND PRINT(.\Listings\FO-M4_Lib_Config_Globale_8051F020.lst) TABS(2) OBJECT(.\Objects\FO-M4_Lib_Config_Globale_8051F0
+                    -20.obj)
+
+line level    source
+
+   1          /******************************************************************************
+   2          ;   FILE NAME   : FO-M4_Lib_Config_Globale_8051F020.C
+   3          ;   TARGET MCUs : C8051F020, 
+   4          ;   DESCRIPTION : Configurations GLOBALES pour le 8051F020
+   5          ;
+   6          ;   REVISION 1.0
+   7          ;   Ce fichier contient les codes de configuration globale du 8051F020
+   8          ;     - Configuration de l'horloge syst�me SYSCLK
+   9          ;     - Configuration des broches du 80851F020
+  10          ;     - Configuration Reset et watchdog
+  11          */
+  12          //******************************************************************************
+  13          
+  14          #include "C8051F020.h"
+  15          #include <c8051F020_SFR16.h>
+  16          #include <FO-M4_Lib_Divers.h>
+*** WARNING C323 IN LINE 14 OF FO-M4_Lib_Divers.h: newline expected, extra characters found
+  17          
+  18          // Peripheral specific initialization functions,
+  19          // Called from the Init_Device() function
+  20          
+  21          //-----------------------------------------------------------------------------
+  22          // D�validation du watchdog
+  23          //-----------------------------------------------------------------------------
+  24          void Reset_Sources_Init()
+  25          {
+  26   1      // D�but Insertion Code configuration Reset et watchdog ***********************
+  27   1        
+  28   1         //P.131 pour WDTCN
+  29   1         WDTCN = 0xDE; //Desactivation du WatchDog en deux etapes
+  30   1         WDTCN = 0XAD;
+  31   1        
+  32   1      // Fin Insertion Code configuration Reset et watchdog *************************
+  33   1      }
+  34          
+  35          //-----------------------------------------------------------------------------
+  36          // Configuration des Ports d'entr�e-sorties
+  37          //-----------------------------------------------------------------------------
+  38          
+  39          void Port_IO_Init()
+  40          {
+  41   1          // P0.0  -  Unassigned,  Open-Drain, Digital
+  42   1          // P0.1  -  Unassigned,  Open-Drain, Digital
+  43   1          // P0.2  -  Unassigned,  Open-Drain, Digital
+  44   1          // P0.3  -  Unassigned,  Open-Drain, Digital
+  45   1          // P0.4  -  Unassigned,  Open-Drain, Digital
+  46   1          // P0.5  -  Unassigned,  Open-Drain, Digital
+  47   1          // P0.6  -  Unassigned,  Open-Drain, Digital
+  48   1          // P0.7  -  Unassigned,  Open-Drain, Digital
+  49   1      
+  50   1          // P1.0  -  Unassigned,  Open-Drain, Digital
+  51   1          // P1.1  -  Unassigned,  Open-Drain, Digital
+  52   1          // P1.2  -  Unassigned,  Open-Drain, Digital
+C51 COMPILER V9.60.0.0   FO_M4_LIB_CONFIG_GLOBALE_8051F020                                 03/30/2021 16:03:44 PAGE 2   
+
+  53   1          // P1.3  -  Unassigned,  Open-Drain, Digital
+  54   1          // P1.4  -  Unassigned,  Open-Drain, Digital
+  55   1          // P1.5  -  Unassigned,  Open-Drain, Digital
+  56   1          // P1.6  -  LED       ,  Open-Drain, Digital
+  57   1          // P1.7  -  Unassigned,  Open-Drain, Digital
+  58   1      
+  59   1          // P2.0  -  Unassigned,  Open-Drain, Digital
+  60   1          // P2.1  -  Unassigned,  Open-Drain, Digital
+  61   1          // P2.2  -  Unassigned,  Open-Drain, Digital
+  62   1          // P2.3  -  Unassigned,  Open-Drain, Digital
+  63   1          // P2.4  -  Unassigned,  Open-Drain, Digital
+  64   1          // P2.5  -  Unassigned,  Open-Drain, Digital
+  65   1          // P2.6  -  Unassigned,  Open-Drain, Digital
+  66   1          // P2.7  -  Unassigned,  Open-Drain, Digital
+  67   1      
+  68   1          // P3.0  -  Unassigned,  Open-Drain, Digital
+  69   1          // P3.1  -  Unassigned,  Open-Drain, Digital
+  70   1          // P3.2  -  Unassigned,  Open-Drain, Digital
+  71   1          // P3.3  -  Unassigned,  Open-Drain, Digital
+  72   1          // P3.4  -  Unassigned,  Open-Drain, Digital
+  73   1          // P3.5  -  SIG_OUT,  Push-Pull, Digital
+  74   1          // P3.6  -  Unassigned,  Open-Drain, Digital Input INT6
+  75   1          // P3.7  -  BP        ,  Open-Drain, Digital Input INT7
+  76   1          
+  77   1          // P4.0 to P7.7   Unassigned,  Open-Drain, Digital
+  78   1          
+  79   1      // D�but Insertion Code configuration Crossbar************************    
+  80   1        
+  81   1         //P.172 pour XBR2
+  82   1         XBR2 |= 0x40;//Activation du CROSSBAR
+  83   1      
+  84   1      // Fin Insertion Code configuration Crossbar**************************
+  85   1      
+  86   1      // D�but Insertion Code configuration GPIO ************************
+  87   1         
+  88   1         P1MDOUT |= 0x01; //P1.0 en Push-Pull (sortie) : ENVOI_AV
+  89   1         P1MDOUT |= 0x02; //P1.1 en Push-Pull (sortie) : ENVOI_AR
+  90   1         P1MDOUT &= ~0x04; //P1.2 en Open-drain (entree) : ECHO_AV
+  91   1         P1MDOUT &= ~0x08; //P1.3 en Open-drain (entree) : ECHO_AR
+  92   1           
+  93   1      // Fin Insertion Code configuration GPIO **************************
+  94   1      }
+  95          
+  96          //-----------------------------------------------------------------------------
+  97          // Configuration de l'oscillateur - SYSCLK = ??Hz 
+  98          //-----------------------------------------------------------------------------
+  99          void Oscillator_Init()
+ 100          {
+ 101   1      // D�but Insertion Code configuration SYSCLK **********************************
+ 102   1        
+ 103   1         //P.137 pour OSCXCN
+ 104   1         OSCXCN = 0x67;//Mise a zero de "XTLVLD" car le crystal n'est pas encore pret
+ 105   1                       //Activation du mode oscillateur : 110
+ 106   1                       //Reglage de la frequence superieur a 6.7 Mhz (22.1184 MHz) : 111
+ 107   1        
+ 108   1         Delay_Oscillator();// Attente superieur a 1ms (mais pas trop long) pour laisser le crystat s'initialiser
+ 109   1        
+ 110   1         while ((OSCXCN & (1<<7)) != (1<<7)) { //Tant que "XTLVLD" n'est pas a 1 on boucle car le crystal n'est p
+             -as pret
+ 111   2         }
+ 112   1      
+ 113   1         //P.136 pour OSCICN
+C51 COMPILER V9.60.0.0   FO_M4_LIB_CONFIG_GLOBALE_8051F020                                 03/30/2021 16:03:44 PAGE 3   
+
+ 114   1         OSCICN |= 0x08;//Changement de SYSCLK pour le crystal, la CLK interne est desactive par le systeme
+ 115   1        
+ 116   1      // Fin Insertion Code configuration SYSCLK ************************************
+ 117   1      }
+ 118          
+ 119          //-----------------------------------------------------------------------------
+ 120          // Initialisation globale du Microcontr�leur - 
+ 121          //-----------------------------------------------------------------------------
+ 122          void Init_Device(void)
+ 123          {
+ 124   1          Reset_Sources_Init();
+ 125   1          Port_IO_Init();
+ 126   1          Oscillator_Init();
+ 127   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     50    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

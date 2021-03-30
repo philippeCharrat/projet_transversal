@@ -1,0 +1,178 @@
+C51 COMPILER V9.60.0.0   FO_M4_MAIN                                                        03/30/2021 16:03:44 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE FO_M4_MAIN
+OBJECT MODULE PLACED IN .\Objects\FO-M4_Main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE FO-M4_Main.C OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listing
+                    -s\FO-M4_Main.lst) TABS(2) OBJECT(.\Objects\FO-M4_Main.obj)
+
+line level    source
+
+   1          //-----------------------------------------------------------------------------
+   2          // FO-M4_Main.c
+   3          //-----------------------------------------------------------------------------
+   4          // AUTH: 
+   5          // DATE: 
+   6          //
+   7          // Target: C8051F02x
+   8          // Tool chain: KEIL Microvision 4
+   9          //
+  10          //-----------------------------------------------------------------------------
+  11          #include <C8051F020.h>
+  12          #include <c8051F020_SFR16.h>
+  13          #include <FO-M4_Lib_Config_Globale_8051F020.h>
+*** WARNING C323 IN LINE 14 OF FO-M4_Lib_Config_Globale_8051F020.h: newline expected, extra characters found
+  14          #include <FO-M4_Lib_Divers.h>
+*** WARNING C323 IN LINE 14 OF FO-M4_Lib_Divers.h: newline expected, extra characters found
+  15          
+  16          // Prototypes de Fonctions
+  17          
+  18          void Timers_Init(void);
+  19          void Int_Init(void);
+  20          void ISR_T2(void);
+  21          unsigned int MES_Dist_AV (void);
+  22          unsigned int MES_Dist_AR (void);
+  23          
+  24          // Variables g�n�rales
+  25          
+  26          sbit ENVOI_AV = P1^0;
+  27          sbit ENVOI_AR = P1^1;
+  28          sbit ECHO_AV = P1^2;
+  29          sbit ECHO_AR = P1^3;
+  30          
+  31          bit ret = 0;
+  32               
+  33          unsigned int a;
+  34          unsigned int b;
+  35          
+  36          //-----------------------------------------------------------------------------
+  37          // MAIN Routine
+  38          //-----------------------------------------------------------------------------
+  39          
+  40          void main (void) {
+  41   1            
+  42   1         Init_Device();
+  43   1      // D�but Insertion Code Initialisations ***************************************
+  44   1         Int_Init();
+  45   1         Timers_Init();
+  46   1      // Fin Code Initialisations ***************************************************
+  47   1      
+  48   1      // D�but Insertion Code Phase D�marrage *************************************** 
+  49   1        a = MES_Dist_AV();
+  50   1        //b = MES_Dist_AR();
+  51   1      // Fin Code phase D�marrage ***************************************************
+  52   1        
+C51 COMPILER V9.60.0.0   FO_M4_MAIN                                                        03/30/2021 16:03:44 PAGE 2   
+
+  53   1        while(1){
+  54   2        }   
+  55   1      }
+  56          
+  57          //-----------------------------------------------------------------------------
+  58          // Fonctions de configuration des divers p�riph�riques
+  59          //-----------------------------------------------------------------------------
+  60          
+  61             void Int_Init(void) {
+  62   1           
+  63   1         //P.119 pour IE
+  64   1         IE |= (1<<5); //Activation de l'interruption du timer 2
+  65   1           
+  66   1         //P.119 pour EA
+  67   1         EA = 1; //Activation des interruptions 
+  68   1           
+  69   1         }
+  70          
+  71             void Timers_Init(void) {
+  72   1        
+  73   1         //P.238 pour T2CON
+  74   1         T2CON = 0x00;  
+  75   1                //Mode Auto-Reload : CP/RL2 = 0
+  76   1                //CLK interne utilise : C/T2 = 0
+  77   1                //Timer2 desactive : TR2 = 0
+  78   1                //Non Utilisation de T2EX : EXEN2 = 0
+  79   1                //UART0 non lie a Timer2 : TCLK0 et RCLK0 a 0
+  80   1                //Clear de EXF2 (flag d'interruption de capture) : EXF2 = 0
+  81   1                //Clear de TF2 (flag d'interruption d'overflow) : TF2 = 0
+  82   1         
+  83   1         RCAP2 = 0x5358; //Reload au temps max d'un signal de echo
+  84   1      
+  85   1         //P.226 pour CKCON
+  86   1         CKCON &= ~(0x32);//Utilisation de SYSCLK/12 pour le timer 2   
+  87   1         
+  88   1         //P.238 pour T2CON
+  89   1         TR2 = 0;//Desactivation de timer2
+  90   1         }
+  91             
+  92          
+  93          
+  94          
+  95          
+  96          //-----------------------------------------------------------------------------
+  97          // Fonctions d'interruptions
+  98          //-----------------------------------------------------------------------------
+  99             
+ 100          void ISR_T2(void) interrupt 5 {
+ 101   1        
+ 102   1        EXF2 = 0;
+ 103   1        TF2 = 0;
+ 104   1        if(ENVOI_AV || ENVOI_AR){
+ 105   2          ENVOI_AV = 0;
+ 106   2          ENVOI_AR = 0;
+ 107   2          TR2 = 0;
+ 108   2        }
+ 109   1        else{
+ 110   2          ret = 1;
+ 111   2        }
+ 112   1      
+ 113   1      }
+ 114          //-----------------------------------------------------------------------------
+C51 COMPILER V9.60.0.0   FO_M4_MAIN                                                        03/30/2021 16:03:44 PAGE 3   
+
+ 115          // Fonctions principales
+ 116          //-----------------------------------------------------------------------------
+ 117          
+ 118          unsigned int MES_Dist_AV (void) {
+ 119   1        ret = 0;
+ 120   1        T2 = 65536 - 19;
+ 121   1        ENVOI_AV = 1;
+ 122   1        TR2 = 1;
+ 123   1        while (!ECHO_AV){}
+ 124   1        TR2 = 1;
+ 125   1        while (ECHO_AV && !ret){}
+ 126   1        TR2 = 0;
+ 127   1        if (ret){ // Si on a overload
+ 128   2          return 0;
+ 129   2        }
+ 130   1        else{ // On a pas Overload
+ 131   2          return(((float)T2*9.362/1000)-200);
+ 132   2        }
+ 133   1      }
+ 134          
+ 135          unsigned int MES_Dist_AR (void) {
+ 136   1        ret = 0;
+ 137   1        T2 = 65536 - 19;
+ 138   1        ENVOI_AR = 1;
+ 139   1        TR2 = 1;
+ 140   1        while (!ECHO_AR && !ret){}
+ 141   1        TR2 = 0;
+ 142   1        if (ret){
+ 143   2          return 0;
+ 144   2        }
+ 145   1        else{ // On a pas Overload
+ 146   2          return(((float)T2*9.362/1000)-200);
+ 147   2        }
+ 148   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    204    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      4    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  2 WARNING(S),  0 ERROR(S)

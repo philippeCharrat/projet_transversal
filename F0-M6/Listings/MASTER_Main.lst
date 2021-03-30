@@ -1,0 +1,393 @@
+C51 COMPILER V9.60.0.0   MASTER_MAIN                                                       03/30/2021 17:39:38 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MASTER_MAIN
+OBJECT MODULE PLACED IN .\Objects\MASTER_Main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE MASTER_Main.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\
+                    -Listings\MASTER_Main.lst) TABS(2) OBJECT(.\Objects\MASTER_Main.obj)
+
+line level    source
+
+   1          //-----------------------------------------------------------------------------
+   2          // F0-M01.c
+   3          //
+   4          // Dernière Modification : 15/03/2021 (aucune erreur déclarées et 3 warnings) 
+   5          // Auteur : 
+   6          //  - Maxime LERICHE
+   7          //  - Philippe CHARRAT
+   8          // TODO : 
+   9          //  - fonction d'erreur 
+  10          //  - Convertion Struct to String 
+  11          //  - 
+  12          //-----------------------------------------------------------------------------
+  13          
+  14          // Import des bibliothèques ---
+  15          #include <C8051F020.h>
+  16          #include <stdio.h>
+  17          #include <string.h>
+  18          #include <stdlib.h>
+  19          #include "c8051F020_SFR16.h"
+  20          
+  21          #include "M3_Lib_Config_Globale_8051F020.h"
+  22          #include "MASTER_Config_Globale.h"
+  23          
+  24          #include <FO-M4_Lib_Config_Globale_8051F020.h>
+*** WARNING C323 IN LINE 14 OF FO-M4_Lib_Config_Globale_8051F020.h: newline expected, extra characters found
+  25          #include <FO-M4_Lib_Divers.h>
+*** WARNING C323 IN LINE 14 OF FO-M4_Lib_Divers.h: newline expected, extra characters found
+  26          
+  27          #include "FO_M1__Structures_COMMANDES_INFORMATIONS_CentraleDeCommande.h"
+  28          #include <F0_M1.h>
+  29          #include <F0_M3.h>
+  30          #include <F0_M4.h>
+  31          // ---
+  32          
+  33          // Prototypes de Fonctions
+  34          sbit Commande_H = P1^4;
+  35          // Variables g�n�rales
+  36          
+  37          sbit ENVOI_AV = P1^0;
+  38          sbit ENVOI_AR = P1^1;
+  39          sbit ECHO_AV = P1^2;
+  40          sbit ECHO_AR = P1^3;
+  41          bit ret;
+  42          
+  43          // Partie : Configuration 
+  44          void Config_UART0(void);
+  45          void Config_interrupt(void);
+  46          void Config_Timer(void);
+  47          
+  48          // Partie : Envoies et Réception des messages 
+  49          void Send_char(char c);
+  50          void Interpretation_commande(void);
+  51          void Send_string(char*);
+  52          void Send_int(int i);
+C51 COMPILER V9.60.0.0   MASTER_MAIN                                                       03/30/2021 17:39:38 PAGE 2   
+
+  53          void Transmettre(char caractere, bit LF);
+  54          void Affichage_UART(char*);
+  55          
+  56          // Partie : Interruption
+  57          void Timer4_ISR (void);
+  58          void ISR_T2(void);
+  59            
+  60          // Variables globales utiles
+  61          char bit_reception_UART;
+  62          int iter;
+  63          int message_a_env;
+  64          
+  65          // Variables char[] 
+  66          char xdata commandes[35];
+  67          
+  68          // Variables pointeurs 
+  69          char* ptrcommandes; 
+  70          char* ptrmessages;
+  71          
+  72          //Variables globales
+  73          char Angle_actuel;
+  74          char temps;
+  75          long AngleAVise; 
+  76          
+  77          
+  78          
+  79          // 
+  80          int tab_dist[5];
+  81          int* ptr_tab_dist;
+  82          // Strucutre 
+  83          struct  COMMANDES commandeenvoieStAs;
+  84          struct  INFORMATIONS informationenvoieAtSt;
+  85          //-----------------------------------------------------------------------------
+  86          // MAIN Routine
+  87          //-----------------------------------------------------------------------------
+  88          
+  89          void main (void) {
+  90   1        // Appel des configurations globales
+  91   1        Init_Device();  
+  92   1        Config_Timer();
+  93   1        Config_UART0();
+  94   1        Config_interrupt();
+  95   1        Send_string("SYSTEME OK !\n");
+  96   1        
+  97   1      
+  98   1        while (1){
+  99   2          // Partie Réception 
+ 100   2          if (RI0 == 1){
+ 101   3            RI0 = 0;
+ 102   3            REN0 = 0;
+ 103   3            // Récupération du char dans le buffer
+ 104   3            bit_reception_UART = SBUF0;
+ 105   3            // Ajout du char dans la string commande 
+ 106   3            commandes[iter] = bit_reception_UART;
+ 107   3            commandes[iter+1] = '\0';
+ 108   3            Send_char(bit_reception_UART);
+ 109   3            // Incrément du tab commande
+ 110   3            iter++;
+ 111   3            // Si fin de commande 
+ 112   3            if (bit_reception_UART == '\r'){      
+ 113   4              // Affichage en console
+ 114   4              Send_string("Commande recue : ");
+C51 COMPILER V9.60.0.0   MASTER_MAIN                                                       03/30/2021 17:39:38 PAGE 3   
+
+ 115   4              Send_string(commandes);
+ 116   4              ptrcommandes = &commandes[0];
+ 117   4              
+ 118   4              // Convertion de commande vers struct
+ 119   4              commandeenvoieStAs = Convertion_S_to_A(ptrcommandes);
+ 120   4              iter = 0;
+ 121   4            }
+ 122   3            if (bit_reception_UART == 'q'){
+ 123   4              message_a_env = 1;
+ 124   4              Send_char('\n');
+ 125   4              informationenvoieAtSt.Etat_BUT_Servo = BUT_Servo_V;   
+ 126   4            }
+ 127   3          }
+ 128   2          // Partie Emission
+ 129   2          if (message_a_env == 1) {
+ 130   3            ptrmessages = Convertion_A_to_S(informationenvoieAtSt);
+ 131   3            Send_string(ptrmessages);
+ 132   3            message_a_env = 0;
+ 133   3          } 
+ 134   2          
+ 135   2          if (commandeenvoieStAs.Etat_DCT_Obst == oui_180 || commandeenvoieStAs.Etat_DCT_Obst == oui_360) {
+ 136   3            *ptr_tab_dist = MES_Dist_AV();
+ 137   3            ptr_tab_dist++;
+ 138   3          }
+ 139   2          
+ 140   2          if (commandeenvoieStAs.Etat_Servo == Servo_H) {
+ 141   3              temps = CDE_Servo_H(commandeenvoieStAs.Servo_Angle);
+ 142   3          }
+ 143   2        }
+ 144   1      }
+ 145          //-----------------------------------------------------------------------------
+ 146          // Fonctions de configuration des divers périphériques et interruptions
+ 147          //-----------------------------------------------------------------------------
+ 148          void Config_interrupt(){
+ 149   1         //P.122 pour EIE2
+ 150   1         EIE2 |= 0x04; //Activation des interruptions du timer 4 et de Int7 (BP)
+ 151   1         
+ 152   1        //P.119 pour IE
+ 153   1         IE |= (1<<5); //Activation de l'interruption du timer 2
+ 154   1           
+ 155   1         //P.119 pour EA
+ 156   1         EA = 1; //Activation des interruptions 
+ 157   1      }
+ 158          
+ 159          void Config_UART0(void){
+ 160   1        // But : Configuration de l'UART 0
+ 161   1        SCON0 = 0x90;
+ 162   1      }
+ 163          
+ 164          void Config_Timer() {
+ 165   1        // But : Configuration du TIMER 2
+ 166   1        TH1 = 0xDC; //Baud-rate de 19200
+ 167   1        TCLK0 = 0;
+ 168   1        RCLK0 = 0;
+ 169   1        TR1 = 0; //start timer
+ 170   1        
+ 171   1        TMOD |= (1<<5);
+ 172   1        TMOD &= ~(0x11010000);
+ 173   1        
+ 174   1        TCON &= ~(0x11000000);
+ 175   1        
+ 176   1        CKCON |= (1<<4);
+C51 COMPILER V9.60.0.0   MASTER_MAIN                                                       03/30/2021 17:39:38 PAGE 4   
+
+ 177   1        
+ 178   1        //But Timer 2 : 
+ 179   1         T2CON = 0x00;  
+ 180   1         RCAP2 = 0x5358; //Reload au temps max d'un signal de echo
+ 181   1         //P.226 pour CKCON
+ 182   1         CKCON &= ~(0x32);//Utilisation de SYSCLK/12 pour le timer 2   
+ 183   1         
+ 184   1         //P.238 pour T2CON
+ 185   1         TR2 = 0;//Desactivation de timer2
+ 186   1        
+ 187   1        
+ 188   1        //But :Config Timer 4
+ 189   1        T4CON = 0x00;//Mode Auto-Reload : CP/RL4 = 0
+ 190   1        CKCON &= ~(0x40);//Utilisation de SYSCLK/12 pour les timers 4
+ 191   1        //P.248 pour RCAP4H et RCAP4L
+ 192   1        RCAP4 = 34070;
+ 193   1        //P.248 pour RCAP4H et RCAP4L
+ 194   1        TH4 = 0x85; //On fait commencer le timer 4 au bon nombre 20ms=36864
+ 195   1        TL4 = 0x16; //Pour que notre premiere periode soit bonne
+ 196   1        //P.247 pour T4CON
+ 197   1        T4CON |= (1<<2);//Activation de timer4
+ 198   1         
+ 199   1      }
+ 200          
+ 201          //-----------------------------------------------------------------------------
+ 202          // Fonctions UART et d'envoie
+ 203          //-----------------------------------------------------------------------------
+ 204          
+ 205          void Send_string(char* mot){
+ 206   1        // But : Fonction pour envoyer une string de manière automatique 
+ 207   1        // Input : 
+ 208   1        //    - mot : string avec les chars à envoyer (via pointeur)
+ 209   1        // Output : 
+ 210   1        //    none
+ 211   1        // Tant que le char n'est pas la fin de la commande ('\r') 
+ 212   1        while (*mot != '\0'){
+ 213   2          if(*(mot+1) == '\r'){ 
+ 214   3            Transmettre(*mot, 1); //Fin de chaine 
+ 215   3          } else { 
+ 216   3            Transmettre(*mot, 0); //milieu du mot
+ 217   3          }
+ 218   2          mot++;
+ 219   2        }
+ 220   1      }
+ 221          /*
+ 222          void Send_int(int i){
+ 223            // But : Fonction pour envoyer une string de manière automatique 
+ 224            // Input : 
+ 225            //    - mot : string avec les chars à envoyer (via pointeur)
+ 226            // Output : 
+ 227            //    none
+ 228            ptrbuffer = convertion_int_array(i);
+ 229            // Tant que le char n'est pas la fin de la commande ('\r') 
+ 230            while (*ptrbuffer != '\0'){
+ 231              if(*(ptrbuffer+1) == '\r'){ 
+ 232                Transmettre(*ptrbuffer, 1); //Fin de chaine 
+ 233              } else { 
+ 234                Transmettre(*ptrbuffer, 0); //milieu du mot
+ 235              }
+ 236              ptrbuffer++;
+ 237            }
+ 238          }*/
+C51 COMPILER V9.60.0.0   MASTER_MAIN                                                       03/30/2021 17:39:38 PAGE 5   
+
+ 239          void Send_char(char c){
+ 240   1        // But : Fonction pour envoyer un caractère dans l'UART
+ 241   1        // Input : 
+ 242   1        //    - c : caractère à envoyer
+ 243   1        // Output : 
+ 244   1        //    none
+ 245   1        //Desactive reception
+ 246   1        REN0 = 0;
+ 247   1        SBUF0 = c;
+ 248   1        
+ 249   1        //Attente fin de transmission
+ 250   1        while(!TI0){}
+ 251   1          
+ 252   1        //Remise à 0 du flag d'envoi une fois qu'on est sur que le caractere a été transmis
+ 253   1        TI0 = 0;
+ 254   1        REN0 = 1;
+ 255   1      }
+ 256          
+ 257          void Transmettre(char caractere, bit LF){
+ 258   1        // But : Fonction pour envoyer un caractère et la 
+ 259   1        // Input : 
+ 260   1        //    - caractere : char à envoyer
+ 261   1        // Output : 
+ 262   1        //    none
+ 263   1        EA = 0;
+ 264   1        //desactive la reception
+ 265   1        REN0 = 0;
+ 266   1        
+ 267   1        //Ecrit la valeur dans SBUF0 pour transmettre
+ 268   1        SBUF0 = caractere;
+ 269   1        
+ 270   1        //Attente de la bonne transmission
+ 271   1        while(!TI0){}
+ 272   1          
+ 273   1        //Remise à 0 du flag d'envoi une fois qu'on est sur que le caractere a été transmis
+ 274   1        TI0 = 0;
+ 275   1        REN0 = 1;
+ 276   1          
+ 277   1        if(LF){Transmettre(0x0D, 0);
+ 278   2        Transmettre(0x0A, 0);} //Retour à la ligne
+ 279   1        EA = 1;
+ 280   1      }
+ 281          
+ 282          
+ 283          unsigned char CDE_Servo_H (char Angle){
+ 284   1        AngleAVise = 10*Angle;
+ 285   1        AngleAVise = AngleAVise + 1500;
+ 286   1        AngleAVise = AngleAVise*1000;
+ 287   1        AngleAVise = AngleAVise/543;
+ 288   1        if (Angle-Angle_actuel > 0){
+ 289   2         temps = (Angle-Angle_actuel)*23/60;
+ 290   2        }
+ 291   1        else{
+ 292   2         temps = (Angle_actuel-Angle)*23/60;
+ 293   2        }
+ 294   1        Angle_actuel = Angle;
+ 295   1        return temps;
+ 296   1      } 
+ 297          
+ 298          
+ 299          unsigned int MES_Dist_AV (void) {
+ 300   1        ret = 0;
+C51 COMPILER V9.60.0.0   MASTER_MAIN                                                       03/30/2021 17:39:38 PAGE 6   
+
+ 301   1        T2 = 65536 - 19;
+ 302   1        ENVOI_AV = 1;
+ 303   1        TR2 = 1;
+ 304   1        while (!ECHO_AV){}
+ 305   1        TR2 = 1;
+ 306   1        while (ECHO_AV && !ret){}
+ 307   1        TR2 = 0;
+ 308   1        if (ret){ // Si on a overload
+ 309   2          return 0;
+ 310   2        }
+ 311   1        else{ // On a pas Overload
+ 312   2          return(((float)T2*9.362/1000)-200);
+ 313   2        }
+ 314   1      }
+ 315          
+ 316          unsigned int MES_Dist_AR (void) {
+ 317   1        ret = 0;
+ 318   1        T2 = 65536 - 19;
+ 319   1        ENVOI_AR = 1;
+ 320   1        TR2 = 1;
+ 321   1        while (!ECHO_AR && !ret){}
+ 322   1        TR2 = 0;
+ 323   1        if (ret){
+ 324   2          return 0;
+ 325   2        }
+ 326   1        else{ // On a pas Overload
+ 327   2          return(((float)T2*9.362/1000)-200);
+ 328   2        }
+ 329   1      }
+ 330          
+ 331          
+ 332          void Timer4_ISR (void) interrupt 16 {
+ 333   1            T4CON &= ~(1<<7); //TF4 = 1
+ 334   1           
+ 335   1           if(!Commande_H ){
+ 336   2             RCAP4 = 0xFFFF - (36832 - AngleAVise);
+ 337   2         }
+ 338   1           else {
+ 339   2             RCAP4 = 0xFFFF - (AngleAVise);
+ 340   2           }
+ 341   1           Commande_H = !Commande_H;
+ 342   1      }
+ 343          
+ 344          void ISR_T2(void) interrupt 5 {
+ 345   1        
+ 346   1        EXF2 = 0;
+ 347   1        TF2 = 0;
+ 348   1        if(ENVOI_AV || ENVOI_AR){
+ 349   2          ENVOI_AV = 0;
+ 350   2          ENVOI_AR = 0;
+ 351   2          TR2 = 0;
+ 352   2        }
+ 353   1        else{ ret = 1;}
+ 354   1      }
+ 355          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    944    ----
+   CONSTANT SIZE    =     32    ----
+   XDATA SIZE       =    118       4
+   PDATA SIZE       =   ----    ----
+C51 COMPILER V9.60.0.0   MASTER_MAIN                                                       03/30/2021 17:39:38 PAGE 7   
+
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  2 WARNING(S),  0 ERROR(S)

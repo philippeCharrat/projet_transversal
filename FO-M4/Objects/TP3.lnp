@@ -1,0 +1,5 @@
+".\Objects\FO-M4_Lib_Config_Globale_8051F020.obj",
+".\Objects\FO-M4_Lib_Divers.obj",
+".\Objects\FO-M4_Main.obj" 
+TO ".\Objects\TP3" 
+PRINT(".\Listings\TP3.m51") RAMSIZE(256) 

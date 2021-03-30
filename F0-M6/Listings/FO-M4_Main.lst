@@ -1,0 +1,13 @@
+C51 COMPILER V9.60.0.0   FO_M4_MAIN                                                        03/30/2021 16:40:40 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE FO_M4_MAIN
+OBJECT MODULE PLACED IN .\Objects\FO-M4_Main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE FO-M4_Main.C LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\L
+                    -istings\FO-M4_Main.lst) TABS(2) OBJECT(.\Objects\FO-M4_Main.obj)
+
+line level    source
+
+*** ERROR C318 OF FO-M4_Main.C: can't open file 'FO-M4_Main.C'
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  1 ERROR(S)

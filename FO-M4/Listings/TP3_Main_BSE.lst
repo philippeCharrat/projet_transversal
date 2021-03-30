@@ -1,0 +1,199 @@
+C51 COMPILER V9.60.0.0   TP3_MAIN_BSE                                                      12/09/2020 12:31:09 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE TP3_MAIN_BSE
+OBJECT MODULE PLACED IN .\Objects\TP3_Main_BSE.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE TP3_Main_BSE.C OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listi
+                    -ngs\TP3_Main_BSE.lst) TABS(2) OBJECT(.\Objects\TP3_Main_BSE.obj)
+
+line level    source
+
+   1          //-----------------------------------------------------------------------------
+   2          // TP3_Main.c
+   3          //-----------------------------------------------------------------------------
+   4          // AUTH: 
+   5          // DATE: 
+   6          //
+   7          // Target: C8051F02x
+   8          // Tool chain: KEIL Microvision 4
+   9          //
+  10          //-----------------------------------------------------------------------------
+  11          #include <C8051F020.h>
+  12          #include <c8051F020_SFR16.h>
+  13          #include <TP3_Lib_Config_Globale_8051F020.h>
+  14          #include <TP3_Lib_Divers.h>
+  15          
+  16          // Prototypes de Fonctions
+  17          
+  18             void Timers_Init(void);
+  19             void Int_Init(void);
+  20             void ISR_T2(void);
+  21             void ISR_T4(void);
+  22          
+  23          //-----------------------------------------------------------------------------
+  24             sbit LED = P1^6; //LED a manipuler sur P1.6
+  25             sbit SIG_OUT = P3^5; //Signal de sortie sur P3.3
+  26             
+  27             int cpt = 0;
+  28             bit first_front_descendant = 1;
+  29             bit first_periode = 1;
+  30             float alpha = 1.4f;
+  31          //-----------------------------------------------------------------------------
+  32          // MAIN Routine
+  33          //-----------------------------------------------------------------------------
+  34          void main (void) {
+  35   1            
+  36   1         Init_Device();
+  37   1      // Début Insertion Code Initialisations ***************************************
+  38   1      // Dans cette section, on y placera les initialisations de variables globales, 
+  39   1      // les appels de fonctions de configuration, etc...
+  40   1        
+  41   1      // Fin Code Initialisations ***************************************************
+  42   1      
+  43   1         LED = 0; //Initialisation de la LED
+  44   1        
+  45   1         Int_Init();
+  46   1         Timers_Init();
+  47   1        
+  48   1      // Début Insertion Code Phase Démarrage *************************************** 
+  49   1      
+  50   1        //Software_Delay_10ms de 0.9ms environ pour SYSCLK de 22.1184 MHz
+  51   1        if ((RSTSRC & (1<<1)) != 0x00) { //Si le bit 1 de RSTSRC est a 1 cela veut dire que le dernier reset etai
+             -t "classique"
+  52   2          for (cpt=0; cpt<2; cpt++){ //Il y a deux cycles
+  53   3            LED = 1;
+C51 COMPILER V9.60.0.0   TP3_MAIN_BSE                                                      12/09/2020 12:31:09 PAGE 2   
+
+  54   3            Software_Delay(1667); //Attente de 1500ms, or 1500 = 1667*0.9
+  55   3            LED = 0;
+  56   3            Software_Delay(111); //Attente de 100ms, or 100 = 111*0.9
+  57   3          }
+  58   2        }
+  59   1        else if((RSTSRC & (1<<6)) != 0x00) { //Si le _bit 6 de RSTSRC est a 1 cela veut dire que le dernier reset
+             - etait "manuel"
+  60   2          for (cpt=0; cpt<6; cpt++){ //Il y a six cycles
+  61   3            LED = 1;
+  62   3            Software_Delay(222); //Attente de 200ms, or 200 = 222*0.9
+  63   3            LED = 0;
+  64   3            Software_Delay(222); //Attente de 200ms, or 200= 222*0.9
+  65   3          }
+  66   2        }
+  67   1        
+  68   1      // Fin Code phase Démarrage ***************************************************
+  69   1        
+  70   1        while(1); // Aucune code n'est autorisé dans cette boucle infinie                         
+  71   1      }
+  72          
+  73          //-----------------------------------------------------------------------------
+  74          //-----------------------------------------------------------------------------
+  75          // Fonctions de configuration des divers périphériques
+  76          //-----------------------------------------------------------------------------
+  77             void Timers_Init(void) {
+  78   1        
+  79   1         //P.238 pour T2CON
+  80   1         T2CON = 0x09;//Mode Capture : CP/RL2 = 1
+  81   1                      //CLK interne utilise : C/T2 = 0
+  82   1                      //Timer2 desactive : TR2 = 0
+  83   1                      //Utilsation de T2EX pour SIG_IN : EXEN2 = 1
+  84   1                      //UART0 non lie a Timer2 : TCLK0 et RCLK0 a 0
+  85   1                      //Clear de EXF2 (flag d'interruption de capture) : EXF2 = 0
+  86   1                      //Clear de TF2 (flag d'interruption d'overflow) : TF2 = 0
+  87   1        
+  88   1         //P.247 pour T4CON
+  89   1         T4CON = 0x00;//Mode Auto-Reload : CP/RL4 = 0
+  90   1                    //CLK interne utilise : CT4 = 0
+  91   1                    //Timer4 desactive : TR4 = 0
+  92   1                    //Desactivation de T4EX : EXEN4 = 0
+  93   1                    //UART1 non lie a Timer4 : TCLK1 et RCLK1 a 0
+  94   1                    //Clear de EXF4 (flag d'interruption de capture) : EXF4 = 0
+  95   1                    //Clear de TF4 (flag d'interruption d'overflow) : TF4 = 0
+  96   1         
+  97   1         //P.226 pour CKCON
+  98   1         CKCON &= ~(0x60);//Utilisation de SYSCLK/12 pour les timers 2 et 4
+  99   1         //On utilise SYSCLK/12 pour avoir une frequence assez haute meme si baisse la precision
+ 100   1         //On doit juste avoir : T_SIG_OUT < 65535 * 542.5 ns = 35.6 ms (28 Hz)
+ 101   1         
+ 102   1         //P.248 pour RCAP4H et RCAP4L
+ 103   1         RCAP4H = 0xEE; //Set valeur de reload pour que Tinitiale = 5ms
+ 104   1         RCAP4L = 0x00; //5ms = 9216 * 542.5 ns donc RCAP4L = (65535 - 4608)+1 = 65352 = 0xEE00
+ 105   1         
+ 106   1         //P.248 pour RCAP4H et RCAP4L
+ 107   1         TH4 = 0xFF; //On fait commencer le timer 4 au bon nombre
+ 108   1         TL4 = 0x48; //Pour que notre premiere periode soit bonne
+ 109   1         
+ 110   1         //P.238 pour T2CON
+ 111   1         TR2 = 1;//Activation de timer2
+ 112   1         
+ 113   1         //P.247 pour T4CON
+ 114   1         T4CON |= (1<<2);//Activation de timer4
+C51 COMPILER V9.60.0.0   TP3_MAIN_BSE                                                      12/09/2020 12:31:09 PAGE 3   
+
+ 115   1         }
+ 116          
+ 117             void Int_Init(void) {
+ 118   1           
+ 119   1         //P.119 pour IE
+ 120   1         IE |= (1<<5); //Activation de l'interruption du timer 2
+ 121   1           
+ 122   1         //P.122 pour EIE2
+ 123   1         EIE2 |= 0x24; //Activation des interruptions du timer 4 et de Int7 (BP)
+ 124   1           
+ 125   1         //P.119 pour EA
+ 126   1         EA = 1; //Activation des interruptions
+ 127   1           
+ 128   1         }
+ 129          //-----------------------------------------------------------------------------
+ 130          //-----------------------------------------------------------------------------
+ 131          // Fonctions d'interruptions
+ 132          //-----------------------------------------------------------------------------
+ 133          // Insérez vos fonctions d'interruption ici
+ 134          
+ 135          void ISR_T2(void) interrupt 5 {
+ 136   1        
+ 137   1        //P.238 pour T2CON
+ 138   1        EXF2 = 0;//Reset du flag de l'interruption capture
+ 139   1        P7 |= (1<<4);//Allumage du pin de vision de l'interruption
+ 140   1        TL2 = 0x00;//Remise a zero du timer 2
+ 141   1        TH2 = 0x00;//Remise a zero du timer 2
+ 142   1        if (first_front_descendant) {
+ 143   2          first_front_descendant = 0;//On va ignorer le premier front descendant car il est inutile
+ 144   2        }
+ 145   1        else {
+ 146   2          //On charge le timer 4 avec la periode voulue
+ 147   2          //P.248 pour RCAP4H et RCAP4L
+ 148   2          RCAP4 = 4294967295 - RCAP2/(2*alpha);
+ 149   2          if (first_periode == 1) {
+ 150   3            first_periode = 0;
+ 151   3            TH4 = RCAP4H;
+ 152   3            TL4 = RCAP4L;
+ 153   3          }
+ 154   2        }
+ 155   1        P7 &= ~(1<<4);//Desactivation du pin de vision de l'interruption
+ 156   1      }
+ 157          
+ 158          void ISR_T4(void) interrupt 16{
+ 159   1        //P.247 pour T4CON
+ 160   1        T4CON &= ~(1<<7);//Reset du flag de l'interruption overflow
+ 161   1        
+ 162   1        //P7 |= (1<<4);//Allumage du pin de vision de l'interruption
+ 163   1        
+ 164   1        SIG_OUT = !SIG_OUT ; //creation d'un front sur SIG_OUT
+ 165   1        
+ 166   1        //P7 &= ~(1<<4);//Desactivation du pin de vision de l'interruption
+ 167   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    309    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      6    ----
+   IDATA SIZE       =   ----    ----
+C51 COMPILER V9.60.0.0   TP3_MAIN_BSE                                                      12/09/2020 12:31:09 PAGE 4   
+
+   BIT SIZE         =      2    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
