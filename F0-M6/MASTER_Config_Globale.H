@@ -16,8 +16,11 @@
 
 
 void Init_Device (void);
-void Reset_Sources_Init();
-void Port_IO_Init();
-void Oscillator_Init_Osc_Quartz();
+void Reset_Sources_Init(void);
+void Port_IO_Init(void);
+void Oscillator_Init_Osc_Quartz(void);
+void Config_interrupt(void);
+void Config_Timer(void);
+void Config_UART0(void);
 
 #endif

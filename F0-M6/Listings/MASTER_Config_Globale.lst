@@ -1,10 +1,10 @@
-C51 COMPILER V9.60.0.0   MASTER_CONFIG_GLOBALE                                             03/30/2021 17:39:38 PAGE 1   
+C51 COMPILER V9.59.0.0   MASTER_CONFIG_GLOBALE                                             04/04/2021 17:16:12 PAGE 1   
 
 
-C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MASTER_CONFIG_GLOBALE
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MASTER_CONFIG_GLOBALE
 OBJECT MODULE PLACED IN .\Objects\MASTER_Config_Globale.obj
-COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE MASTER_Config_Globale.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEN
-                    -D PRINT(.\Listings\MASTER_Config_Globale.lst) TABS(2) OBJECT(.\Objects\MASTER_Config_Globale.obj)
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE MASTER_Config_Globale.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND P
+                    -RINT(.\Listings\MASTER_Config_Globale.lst) TABS(2) OBJECT(.\Objects\MASTER_Config_Globale.obj)
 
 line level    source
 
@@ -12,7 +12,7 @@ line level    source
    2          // MASTER_Config_Globale.c
    3          //
    4          //Gestion des trames de commandes et d'informations
-   5          //Réception sur l'UART des commandes et stockage dans un tableau binaire
+   5          //Rï¿½ception sur l'UART des commandes et stockage dans un tableau binaire
    6          //Lecture dans un tableau des informations et envoie par l'UART
    7          //-----------------------------------------------------------------------------
    8          
@@ -20,51 +20,114 @@ line level    source
   10          #include "c8051F020_SFR16.h"
   11          
   12          //-----------------------------------------------------------------------------
-  13          // Initialisation clock du Microcontrôleur (sysclock à 22MHz)
+  13          // Initialisation clock du Microcontrï¿½leur (sysclock ï¿½ 22MHz)
   14          //-----------------------------------------------------------------------------
   15          void Oscillator_init(void){
   16   1        int i = 0;
   17   1        OSCXCN    = 0x67;  // Config de l'horloge externe - Quartz > 6,7 MHz
   18   1        for (i = 0; i < 3000; i++);  // attente stabilisation Fosc quartz  
-  19   1        while ((OSCXCN & 0x80) == 0); // validation stabilité du quartz
+  19   1        while ((OSCXCN & 0x80) == 0); // validation stabilitï¿½ du quartz
   20   1        OSCICN    = 0x0C;  // Commutation sur oscillateur externe
   21   1      }
   22          //-----------------------------------------------------------------------------
-  23          // Initialisation Ports I/O du Microcontrôleur
+  23          // Initialisation Ports I/O du Microcontrï¿½leur
   24          //-----------------------------------------------------------------------------
   25          void Port_IO_init(void){
   26   1        
   27   1        XBR0 = (1<<2);
-  28   1        XBR2 = (1<<6);
-  29   1        
-  30   1      }
-  31          //-----------------------------------------------------------------------------
-  32          // Initialisation Sources de reset du Microcontrôleur
-  33          //-----------------------------------------------------------------------------
-  34          
-  35          void Reset_Sources_init(void){
-  36   1        //Watchdog
-  37   1        WDTCN = 0xDE;
-  38   1        WDTCN = 0XAD;
-  39   1        
-  40   1        //Autres
-  41   1      } 
-  42          
-  43          //-----------------------------------------------------------------------------
-  44          // Initialisation globale du Microcontrôleur
-  45          //-----------------------------------------------------------------------------
-  46          void Init_Device(void)
-  47          {
-  48   1        Oscillator_init();
-  49   1        Port_IO_init();
-  50   1        Reset_Sources_init();
-  51   1      }
+  28   1        XBR2 = 0x44;
+  29   1      
+  30   1        P1MDOUT |= 0x01; //P1.0 en Push-Pull (sortie) : ENVOI_AV
+  31   1        P1MDOUT |= 0x02; //P1.1 en Push-Pull (sortie) : ENVOI_AR
+  32   1        P1MDOUT &= ~0x04; //P1.2 en Open-drain (entree) : ECHO_AV
+  33   1        P1MDOUT &= ~0x08; //P1.3 en Open-drain (entree) : ECHO_AR
+  34   1        P1MDOUT |= (1<<4); //P1.4 en Open-drain (entree) : Commande_H
+  35   1      }
+  36          //-----------------------------------------------------------------------------
+  37          // Initialisation Sources de reset du Microcontrï¿½leur
+  38          //-----------------------------------------------------------------------------
+  39          
+  40          void Reset_Sources_init(void){
+  41   1        //Watchdog
+  42   1        WDTCN = 0xDE;
+  43   1        WDTCN = 0XAD;
+  44   1        
+  45   1        //Autres
+  46   1      } 
+  47          
+  48          void Config_interrupt(){
+  49   1         //P.122 pour EIE2
+  50   1         EIE2 |= 0x04; //Activation des interruptions du timer 4 et de Int7 (BP)
+  51   1         
+  52   1        //P.119 pour IE
+  53   1         IE |= (1<<5); //Activation de l'interruption du timer 2
+  54   1           
+C51 COMPILER V9.59.0.0   MASTER_CONFIG_GLOBALE                                             04/04/2021 17:16:12 PAGE 2   
+
+  55   1         //P.119 pour EA
+  56   1         EA = 1; //Activation des interruptions 
+  57   1      }
+  58          
+  59          void Config_Timer() {
+  60   1        // But : Configuration du TIMER 1
+  61   1        TH1 = 0xDC; //Baud-rate de 19200
+  62   1        TCLK0 = 0;
+  63   1        RCLK0 = 0;
+  64   1        TR1 = 0; //start timer
+  65   1        
+  66   1        TMOD |= (1<<5);
+  67   1        TMOD &= ~(0x11010000);
+  68   1        
+  69   1        TCON &= ~(0x11000000);
+  70   1        
+  71   1        CKCON |= (1<<4);
+  72   1        
+  73   1        //But Timer 2 : 
+  74   1         T2CON = 0x00;  
+  75   1         RCAP2 = 0x5358; //Reload au temps max d'un signal de echo
+  76   1         //P.226 pour CKCON
+  77   1         CKCON &= ~(0x32);//Utilisation de SYSCLK/12 pour le timer 2   
+  78   1         
+  79   1         //P.238 pour T2CON
+  80   1         TR2 = 0;//Desactivation de timer2
+  81   1        
+  82   1        
+  83   1        //But :Config Timer 4
+  84   1        T4CON = 0x00;//Mode Auto-Reload : CP/RL4 = 0
+  85   1        CKCON &= ~(0x40);//Utilisation de SYSCLK/12 pour les timers 4
+  86   1        //P.248 pour RCAP4H et RCAP4L
+  87   1        RCAP4 = 34070;
+  88   1        //P.248 pour RCAP4H et RCAP4L
+  89   1        TH4 = 0x85; //On fait commencer le timer 4 au bon nombre 20ms=36864
+  90   1        TL4 = 0x16; //Pour que notre premiere periode soit bonne
+  91   1        //P.247 pour T4CON
+  92   1        T4CON |= (1<<2);//Activation de timer4
+  93   1         
+  94   1      }
+  95          
+  96          void Config_UART0(void){
+  97   1        // But : Configuration de l'UART 0
+  98   1        SCON0 = 0x90;
+  99   1        SCON1 = 0x90;
+ 100   1      }
+ 101          //-----------------------------------------------------------------------------
+ 102          // Initialisation globale du Microcontrï¿½leur
+ 103          //-----------------------------------------------------------------------------
+ 104          void Init_Device(void)
+ 105          {
+ 106   1        Oscillator_init();
+ 107   1        Port_IO_init();
+ 108   1        Reset_Sources_init();
+ 109   1        Config_interrupt();
+ 110   1        Config_Timer();
+ 111   1        Config_UART0();
+ 112   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-C51 COMPILER V9.60.0.0   MASTER_CONFIG_GLOBALE                                             03/30/2021 17:39:38 PAGE 2   
+   CODE SIZE        =    140    ----
+C51 COMPILER V9.59.0.0   MASTER_CONFIG_GLOBALE                                             04/04/2021 17:16:12 PAGE 3   
 
-   CODE SIZE        =     50    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----

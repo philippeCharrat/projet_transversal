@@ -1,6 +1,9 @@
 ".\Objects\STARTUP.obj",
-".\Objects\MASTER_Config_Globale.obj",
 ".\Objects\MASTER_Main.obj",
-".\Objects\F0_M1.obj" 
+".\Objects\MASTER_Config_Globale.obj",
+".\Objects\F0_M1.obj",
+".\Objects\F0_M2.obj",
+".\Objects\F0_M3.obj",
+".\Objects\F0_M4.obj" 
 TO ".\Objects\MASTER_prog" 
 PRINT(".\Listings\MASTER_prog.m51") RAMSIZE(256) 

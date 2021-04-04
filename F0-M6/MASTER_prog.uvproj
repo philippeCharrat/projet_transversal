@@ -382,19 +382,14 @@
               <FilePath>.\STARTUP.A51</FilePath>
             </File>
             <File>
-              <FileName>MASTER_Config_Globale.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\MASTER_Config_Globale.c</FilePath>
-            </File>
-            <File>
               <FileName>MASTER_Main.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\MASTER_Main.c</FilePath>
             </File>
             <File>
-              <FileName>FO_M1__Structures_COMMANDES_INFORMATIONS_CentraleDeCommande.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\FO_M1__Structures_COMMANDES_INFORMATIONS_CentraleDeCommande.h</FilePath>
+              <FileName>MASTER_Config_Globale.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\MASTER_Config_Globale.c</FilePath>
             </File>
             <File>
               <FileName>F0_M1.c</FileName>
@@ -402,34 +397,24 @@
               <FilePath>.\F0_M1.c</FilePath>
             </File>
             <File>
-              <FileName>F0_M1.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\F0_M1.h</FilePath>
+              <FileName>F0_M2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\F0_M2.c</FilePath>
             </File>
             <File>
-              <FileName>F0_M4.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\F0_M4.h</FilePath>
+              <FileName>F0_M3.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\F0_M3.c</FilePath>
+            </File>
+            <File>
+              <FileName>F0_M4.C</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\F0_M4.C</FilePath>
             </File>
           </Files>
         </Group>
       </Groups>
     </Target>
   </Targets>
-
-  <LayerInfo>
-    <Layers>
-      <Layer>
-        <LayName>&lt;Project Info&gt;</LayName>
-        <LayDesc></LayDesc>
-        <LayUrl></LayUrl>
-        <LayKeys></LayKeys>
-        <LayCat></LayCat>
-        <LayLic></LayLic>
-        <LayTarg>0</LayTarg>
-        <LayPrjMark>1</LayPrjMark>
-      </Layer>
-    </Layers>
-  </LayerInfo>
 
 </Project>

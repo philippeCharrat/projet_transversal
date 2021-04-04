@@ -3,5 +3,6 @@
 
 unsigned int MES_Dist_AV (void);
 unsigned int MES_Dist_AR (void);
+void ISR_T2(void);
 
 #endif

@@ -2,7 +2,7 @@
 // MASTER_Config_Globale.c
 //
 //Gestion des trames de commandes et d'informations
-//Réception sur l'UART des commandes et stockage dans un tableau binaire
+//Rï¿½ception sur l'UART des commandes et stockage dans un tableau binaire
 //Lecture dans un tableau des informations et envoie par l'UART
 //-----------------------------------------------------------------------------
 
@@ -10,26 +10,31 @@
 #include "c8051F020_SFR16.h"
 
 //-----------------------------------------------------------------------------
-// Initialisation clock du Microcontrôleur (sysclock à 22MHz)
+// Initialisation clock du Microcontrï¿½leur (sysclock ï¿½ 22MHz)
 //-----------------------------------------------------------------------------
 void Oscillator_init(void){
 	int i = 0;
 	OSCXCN    = 0x67;  // Config de l'horloge externe - Quartz > 6,7 MHz
 	for (i = 0; i < 3000; i++);  // attente stabilisation Fosc quartz  
-	while ((OSCXCN & 0x80) == 0); // validation stabilité du quartz
+	while ((OSCXCN & 0x80) == 0); // validation stabilitï¿½ du quartz
 	OSCICN    = 0x0C;  // Commutation sur oscillateur externe
 }
 //-----------------------------------------------------------------------------
-// Initialisation Ports I/O du Microcontrôleur
+// Initialisation Ports I/O du Microcontrï¿½leur
 //-----------------------------------------------------------------------------
 void Port_IO_init(void){
 	
 	XBR0 = (1<<2);
-	XBR2 = (1<<6);
-	
+	XBR2 = 0x44;
+
+	P1MDOUT |= 0x01; //P1.0 en Push-Pull (sortie) : ENVOI_AV
+	P1MDOUT |= 0x02; //P1.1 en Push-Pull (sortie) : ENVOI_AR
+	P1MDOUT &= ~0x04; //P1.2 en Open-drain (entree) : ECHO_AV
+	P1MDOUT &= ~0x08; //P1.3 en Open-drain (entree) : ECHO_AR
+	P1MDOUT |= (1<<4); //P1.4 en Open-drain (entree) : Commande_H
 }
 //-----------------------------------------------------------------------------
-// Initialisation Sources de reset du Microcontrôleur
+// Initialisation Sources de reset du Microcontrï¿½leur
 //-----------------------------------------------------------------------------
 
 void Reset_Sources_init(void){
@@ -40,12 +45,68 @@ void Reset_Sources_init(void){
 	//Autres
 }	
 
+void Config_interrupt(){
+	 //P.122 pour EIE2
+	 EIE2 |= 0x04; //Activation des interruptions du timer 4 et de Int7 (BP)
+	 
+	//P.119 pour IE
+	 IE |= (1<<5); //Activation de l'interruption du timer 2
+		 
+	 //P.119 pour EA
+	 EA = 1; //Activation des interruptions 
+}
+
+void Config_Timer() {
+	// But : Configuration du TIMER 1
+	TH1 = 0xDC; //Baud-rate de 19200
+	TCLK0 = 0;
+	RCLK0 = 0;
+	TR1 = 0; //start timer
+	
+	TMOD |= (1<<5);
+	TMOD &= ~(0x11010000);
+	
+	TCON &= ~(0x11000000);
+	
+	CKCON |= (1<<4);
+	
+	//But Timer 2 : 
+	 T2CON = 0x00;	
+	 RCAP2 = 0x5358; //Reload au temps max d'un signal de echo
+	 //P.226 pour CKCON
+	 CKCON &= ~(0x32);//Utilisation de SYSCLK/12 pour le timer 2	 
+	 
+	 //P.238 pour T2CON
+	 TR2 = 0;//Desactivation de timer2
+	
+	
+	//But :Config Timer 4
+	T4CON = 0x00;//Mode Auto-Reload : CP/RL4 = 0
+	CKCON &= ~(0x40);//Utilisation de SYSCLK/12 pour les timers 4
+	//P.248 pour RCAP4H et RCAP4L
+	RCAP4 = 34070;
+	//P.248 pour RCAP4H et RCAP4L
+	TH4 = 0x85; //On fait commencer le timer 4 au bon nombre 20ms=36864
+	TL4 = 0x16; //Pour que notre premiere periode soit bonne
+	//P.247 pour T4CON
+	T4CON |= (1<<2);//Activation de timer4
+	 
+}
+
+void Config_UART0(void){
+	// But : Configuration de l'UART 0
+	SCON0 = 0x90;
+	SCON1 = 0x90;
+}
 //-----------------------------------------------------------------------------
-// Initialisation globale du Microcontrôleur
+// Initialisation globale du Microcontrï¿½leur
 //-----------------------------------------------------------------------------
 void Init_Device(void)
 {
 	Oscillator_init();
 	Port_IO_init();
 	Reset_Sources_init();
+	Config_interrupt();
+	Config_Timer();
+	Config_UART0();
 }

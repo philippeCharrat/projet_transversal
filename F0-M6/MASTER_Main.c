@@ -18,338 +18,357 @@
 #include <stdlib.h>
 #include "c8051F020_SFR16.h"
 
-#include "M3_Lib_Config_Globale_8051F020.h"
 #include "MASTER_Config_Globale.h"
 
-#include <FO-M4_Lib_Config_Globale_8051F020.h>
-#include <FO-M4_Lib_Divers.h>
-
 #include "FO_M1__Structures_COMMANDES_INFORMATIONS_CentraleDeCommande.h"
+#include "FO_M2__Structures_COMMANDES_INFORMATIONS_Serializer.h"
+
 #include <F0_M1.h>
+#include <F0_M2.h>
 #include <F0_M3.h>
 #include <F0_M4.h>
 // ---
 
 // Prototypes de Fonctions
-sbit Commande_H = P1^4;
+
 // Variables g�n�rales
 
-sbit ENVOI_AV = P1^0;
-sbit ENVOI_AR = P1^1;
-sbit ECHO_AV = P1^2;
-sbit ECHO_AR = P1^3;
-bit ret;
-
-// Partie : Configuration 
-void Config_UART0(void);
-void Config_interrupt(void);
-void Config_Timer(void);
-
-// Partie : Envoies et Réception des messages 
-void Send_char(char c);
-void Interpretation_commande(void);
-void Send_string(char*);
-void Send_int(int i);
-void Transmettre(char caractere, bit LF);
-void Affichage_UART(char*);
-
 // Partie : Interruption
-void Timer4_ISR (void);
-void ISR_T2(void);
 	
-// Variables globales utiles
-char bit_reception_UART;
-int iter;
-int message_a_env;
-
-// Variables char[] 
-char xdata commandes[35];
-
-// Variables pointeurs 
-char* ptrcommandes; 
-char* ptrmessages;
-
 //Variables globales
-char Angle_actuel;
 char temps;
-long AngleAVise; 
-
-
+char demande_pids = 0;
 
 // 
-int tab_dist[5];
-int* ptr_tab_dist;
+unsigned int distance;
+
 // Strucutre 
-struct  COMMANDES commandeenvoieStAs;
-struct  INFORMATIONS informationenvoieAtSt;
+struct COMMANDES commandeCentraleCommande = {
+		Epreuve_non,
+		Mouvement_non, 20, 0, 0, 0,
+		ACQ_non, 0,
+		DCT_non, 0,
+		Lumiere_non, 0, 0, 0, 0,
+		Servo_non, 0,
+		Energie_non,
+		Position_non, 0, 0, 0,
+		Photo_non, 0, 0
+	};
+
+struct INFORMATIONS informationsCentraleCommande = {
+    Invite_non, "Message d'invite",
+    BUT_Atteint_non,
+    BUT_Servo_non,
+    DCT_Obst_non, 0, 0,
+    RESULT_Courant_non, 0,
+    RESULT_Energie_non, 0,
+    RESULT_Position_non, 0, 0, 0,
+    Aux_non, "???"
+	};
+
+struct COMMANDES_SERIALIZER commandeSerializer = {
+	Commande_non,
+	0,       
+	0,
+	0,              
+	0,         
+	0,           
+	0,   
+	0,        
+	0,  
+	};
+
+struct INFORMATIONS_SERIALIZER informationsSerializer = {
+	Reponse_non, 	   
+	0,           
+	0,                
+	0,                 
+	0,                    
+	0,                    
+	0,                 
+	0,                   
+	0,          
+	0,       
+	};
 //-----------------------------------------------------------------------------
 // MAIN Routine
 //-----------------------------------------------------------------------------
 
 void main (void) {
 	// Appel des configurations globales
-	Init_Device();  
-	Config_Timer();
-	Config_UART0();
-	Config_interrupt();
-	Send_string("SYSTEME OK !\n");
-	
+	Init_Device();
+	Send_string_UART0("SYSTEME OK !\n\0");
 
-	while (1){
-		// Partie Réception 
-		if (RI0 == 1){
-			RI0 = 0;
-			REN0 = 0;
-			// Récupération du char dans le buffer
-			bit_reception_UART = SBUF0;
-			// Ajout du char dans la string commande 
-			commandes[iter] = bit_reception_UART;
-			commandes[iter+1] = '\0';
-			Send_char(bit_reception_UART);
-			// Incrément du tab commande
-			iter++;
-			// Si fin de commande 
-			if (bit_reception_UART == '\r'){			
-				// Affichage en console
-				Send_string("Commande recue : ");
-				Send_string(commandes);
-				ptrcommandes = &commandes[0];
-				
-				// Convertion de commande vers struct
-				commandeenvoieStAs = Convertion_S_to_A(ptrcommandes);
-				iter = 0;
+	while (1)
+	{
+		commandeCentraleCommande = recuperation_structure_commande(commandeCentraleCommande);
+		informationsSerializer = recuperation_structure_serializer(informationsSerializer);
+
+		// ------------------------- Gestion de l'epreuvre ---------------------------------------------
+		
+		switch (commandeCentraleCommande.Etat_Epreuve)
+        {
+        case epreuve1:
+			informationsCentraleCommande.Etat_Invite = Invite_oui;
+			informationsCentraleCommande.MSG_Invit = "Epreuve 1 start !";
+			
+			commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
+            break;
+        case epreuve2:
+			informationsCentraleCommande.Etat_Invite = Invite_oui;
+			informationsCentraleCommande.MSG_Invit = "Epreuve 2 start !";
+			
+			commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
+            break;
+        case epreuve3:
+			informationsCentraleCommande.Etat_Invite = Invite_oui;
+			informationsCentraleCommande.MSG_Invit = "Epreuve 3 start !";
+			
+			commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
+            break;
+        case epreuve4:
+			informationsCentraleCommande.Etat_Invite = Invite_oui;
+			informationsCentraleCommande.MSG_Invit = "Epreuve 4 start !";
+			
+			commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
+            break;
+        case epreuve5:
+			informationsCentraleCommande.Etat_Invite = Invite_oui;
+			informationsCentraleCommande.MSG_Invit = "Epreuve 5 start !";
+			
+			commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
+            break;
+        case epreuve6:
+			informationsCentraleCommande.Etat_Invite = Invite_oui;
+			informationsCentraleCommande.MSG_Invit = "Epreuve 6 start !";
+			
+			commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
+            break;
+        case epreuve7:
+			informationsCentraleCommande.Etat_Invite = Invite_oui;
+			informationsCentraleCommande.MSG_Invit = "Epreuve 7 start !";
+			
+			commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
+            break;
+        case epreuve8:
+			informationsCentraleCommande.Etat_Invite = Invite_oui;
+			informationsCentraleCommande.MSG_Invit = "Epreuve 8 start !";
+			
+			commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
+            break;
+        case Fin_Epreuve:
+			informationsCentraleCommande.Etat_Invite = Invite_oui;
+			informationsCentraleCommande.MSG_Invit = "Epreuve end !";
+			
+			commandeCentraleCommande.Etat_Epreuve = Epreuve_non;
+            break;
+        default:
+            break;
+        }
+		
+		// ------------------------- Gestion du type de mouvement ---------------------------------------------
+
+		if (commandeCentraleCommande.Etat_Mouvement == Stopper)
+		{
+				commandeSerializer.Etat_Commande = Stop;
+				commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+		}
+		else if(commandeCentraleCommande.Etat_Mouvement != Mouvement_non)
+		{
+			//Demande si les moteurs sont deja utilises
+			if(demande_pids == 0)
+			{
+				commandeSerializer.Etat_Commande = Pids;
+				demande_pids = 1;
 			}
-			if (bit_reception_UART == 'q'){
-				message_a_env = 1;
-				Send_char('\n');
-				informationenvoieAtSt.Etat_BUT_Servo = BUT_Servo_V;		
+			// Si on recu la reponse du if precedent
+			else if(informationsSerializer.Etat_Response == Rep_pids)
+			{
+				demande_pids = 0;
+				informationsSerializer.Etat_Response = Reponse_non;
+				if(informationsSerializer.Read_Pids == 0)
+				{
+					switch(commandeCentraleCommande.Etat_Mouvement)
+					{
+					case Avancer:
+						commandeSerializer.Etat_Commande = mogo_1_2;
+						commandeSerializer.Vitesse_Mot1 = (commandeCentraleCommande.Vitesse*28)/100;
+						commandeSerializer.Vitesse_Mot2 = (commandeCentraleCommande.Vitesse*28)/100;
+
+						commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+						break;
+					case Reculer:
+						commandeSerializer.Etat_Commande = mogo_1_2;
+						commandeSerializer.Vitesse_Mot1 = -(commandeCentraleCommande.Vitesse*28)/100;
+						commandeSerializer.Vitesse_Mot2 = -(commandeCentraleCommande.Vitesse*28)/100;
+
+						commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+						break;
+					case Rot_90D:
+						commandeSerializer.Etat_Commande = digo_1_2;
+						commandeSerializer.Ticks_mot1 = (90/180) * 100;
+						commandeSerializer.Ticks_mot2 = (90/180) * 100;
+						commandeSerializer.Vitesse_Mot1 = 10;
+						commandeSerializer.Vitesse_Mot2 = -10;
+
+						commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+						break;
+					case Rot_90G:
+						commandeSerializer.Etat_Commande = digo_1_2;
+						commandeSerializer.Ticks_mot1 = (90/180) * 100;
+						commandeSerializer.Ticks_mot2 = (90/180) * 100;
+						commandeSerializer.Vitesse_Mot1 = -10;
+						commandeSerializer.Vitesse_Mot2 = 10;
+
+						commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+						break;
+					case Rot_180D:
+						commandeSerializer.Etat_Commande = digo_1_2;
+						commandeSerializer.Ticks_mot1 = 100;
+						commandeSerializer.Ticks_mot2 = 100;
+						commandeSerializer.Vitesse_Mot1 = 10;
+						commandeSerializer.Vitesse_Mot2 = -10;
+
+						commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+						break;
+					case Rot_180G:
+						commandeSerializer.Etat_Commande = digo_1_2;
+						commandeSerializer.Ticks_mot1 = 100;
+						commandeSerializer.Ticks_mot2 = 100;
+						commandeSerializer.Vitesse_Mot1 = -10;
+						commandeSerializer.Vitesse_Mot2 = 10;
+
+						commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+						break;
+					case Rot_AngD:
+						commandeSerializer.Etat_Commande = digo_1_2;
+						commandeSerializer.Ticks_mot1 = (abs(commandeCentraleCommande.Angle)/180) * 100;
+						commandeSerializer.Ticks_mot2 = (abs(commandeCentraleCommande.Angle)/180) * 100;
+						commandeSerializer.Vitesse_Mot1 = 10;
+						commandeSerializer.Vitesse_Mot2 = -10;
+
+						commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+						break;
+					case Rot_AngG:
+						commandeSerializer.Etat_Commande = digo_1_2;
+						commandeSerializer.Ticks_mot1 = (abs(commandeCentraleCommande.Angle)/180) * 100;
+						commandeSerializer.Ticks_mot2 = (abs(commandeCentraleCommande.Angle)/180) * 100;
+						commandeSerializer.Vitesse_Mot1 = -10;
+						commandeSerializer.Vitesse_Mot2 = 10;
+
+						commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+						break;
+					case Depl_Coord:
+						// A faire !
+						if(commandeCentraleCommande.Pos_Coord_X = commandeCentraleCommande.Coord_X)
+						{
+							if(commandeCentraleCommande.Pos_Coord_Y = commandeCentraleCommande.Coord_Y)
+							{
+								if(commandeCentraleCommande.Pos_Angle = commandeCentraleCommande.Angle)
+								{
+									commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+								}
+							}
+						}
+						break;
+					default:
+						break;
+					}
+				}
+			}
+			else
+			{
+				commandeSerializer.Etat_Commande = Commande_non;
 			}
 		}
-		// Partie Emission
-		if (message_a_env == 1) {
-			ptrmessages = Convertion_A_to_S(informationenvoieAtSt);
-			Send_string(ptrmessages);
-			message_a_env = 0;
-		}	
-		
-		if (commandeenvoieStAs.Etat_DCT_Obst == oui_180 || commandeenvoieStAs.Etat_DCT_Obst == oui_360) {
-			*ptr_tab_dist = MES_Dist_AV();
-			ptr_tab_dist++;
-		}
-		
-		if (commandeenvoieStAs.Etat_Servo == Servo_H) {
-				temps = CDE_Servo_H(commandeenvoieStAs.Servo_Angle);
-		}
+		switch (commandeCentraleCommande.Etat_ACQ_Son)
+        {
+        case ACQ_oui:
+			//AS1		
+            break;
+        default:
+            break;
+        }
+
+        switch (commandeCentraleCommande.Etat_DCT_Obst)
+        {
+        case oui_180:
+			//M3 & M4
+            break;
+        case oui_360:
+			//M3 & M4
+            break;
+        default:
+            break;
+        }
+
+        switch (commandeCentraleCommande.Etat_Lumiere)
+        {
+        case Allumer:
+			//MS1 && S6 && S1
+            break;
+        case Eteindre:
+			//MS1 && S6 && S1
+            break;
+        default:
+            break;
+        }
+
+        switch (commandeCentraleCommande.Etat_Servo)
+        {
+        case Servo_H:
+            //M3
+            break;
+        case Servo_V:
+			//S3
+            break;
+        default:
+            break;
+        }
+
+        switch (commandeCentraleCommande.Etat_Energie)
+        {
+        case Mesure_I:
+			//M5
+            break;
+        case Mesure_E:
+			//M5
+            break;
+        default:
+            break;
+        }
+
+		switch (commandeCentraleCommande.Etat_Position)
+        {
+        case Init_Position:
+
+            break;
+        case Demande_Position:
+			//envoi la position actuelle
+			informationsCentraleCommande.Etat_RESULT_Position = RESULT_Position_oui;
+			commandeCentraleCommande.Etat_Position = Position_non;
+            break;
+        default:
+            break;
+        }
+
+        switch (commandeCentraleCommande.Etat_Photo)
+        {
+        case Photo_1:
+
+            break;
+        case Photo_Multiple:
+
+            break;
+        case Photo_continue:
+
+            break;
+        case Photo_stop:
+
+            break;
+        default:
+            break;
+        }
+			Convertion_A_to_S(informationsCentraleCommande);
 	}
 }
-//-----------------------------------------------------------------------------
-// Fonctions de configuration des divers périphériques et interruptions
-//-----------------------------------------------------------------------------
-void Config_interrupt(){
-	 //P.122 pour EIE2
-	 EIE2 |= 0x04; //Activation des interruptions du timer 4 et de Int7 (BP)
-	 
-	//P.119 pour IE
-	 IE |= (1<<5); //Activation de l'interruption du timer 2
-		 
-	 //P.119 pour EA
-	 EA = 1; //Activation des interruptions 
-}
-
-void Config_UART0(void){
-	// But : Configuration de l'UART 0
-	SCON0 = 0x90;
-}
-
-void Config_Timer() {
-	// But : Configuration du TIMER 2
-	TH1 = 0xDC; //Baud-rate de 19200
-	TCLK0 = 0;
-	RCLK0 = 0;
-	TR1 = 0; //start timer
-	
-	TMOD |= (1<<5);
-	TMOD &= ~(0x11010000);
-	
-	TCON &= ~(0x11000000);
-	
-	CKCON |= (1<<4);
-	
-	//But Timer 2 : 
-	 T2CON = 0x00;	
-	 RCAP2 = 0x5358; //Reload au temps max d'un signal de echo
-	 //P.226 pour CKCON
-	 CKCON &= ~(0x32);//Utilisation de SYSCLK/12 pour le timer 2	 
-	 
-	 //P.238 pour T2CON
-	 TR2 = 0;//Desactivation de timer2
-	
-	
-	//But :Config Timer 4
-	T4CON = 0x00;//Mode Auto-Reload : CP/RL4 = 0
-	CKCON &= ~(0x40);//Utilisation de SYSCLK/12 pour les timers 4
-	//P.248 pour RCAP4H et RCAP4L
-	RCAP4 = 34070;
-	//P.248 pour RCAP4H et RCAP4L
-	TH4 = 0x85; //On fait commencer le timer 4 au bon nombre 20ms=36864
-	TL4 = 0x16; //Pour que notre premiere periode soit bonne
-	//P.247 pour T4CON
-	T4CON |= (1<<2);//Activation de timer4
-	 
-}
-
-//-----------------------------------------------------------------------------
-// Fonctions UART et d'envoie
-//-----------------------------------------------------------------------------
-
-void Send_string(char* mot){
-	// But : Fonction pour envoyer une string de manière automatique 
-	// Input : 
-	//		- mot : string avec les chars à envoyer (via pointeur)
-	// Output : 
-	//		none
-	// Tant que le char n'est pas la fin de la commande ('\r') 
-	while (*mot != '\0'){
-		if(*(mot+1) == '\r'){	
-			Transmettre(*mot, 1); //Fin de chaine 
-		} else { 
-			Transmettre(*mot, 0); //milieu du mot
-		}
-		mot++;
-	}
-}
-/*
-void Send_int(int i){
-	// But : Fonction pour envoyer une string de manière automatique 
-	// Input : 
-	//		- mot : string avec les chars à envoyer (via pointeur)
-	// Output : 
-	//		none
-	ptrbuffer = convertion_int_array(i);
-	// Tant que le char n'est pas la fin de la commande ('\r') 
-	while (*ptrbuffer != '\0'){
-		if(*(ptrbuffer+1) == '\r'){	
-			Transmettre(*ptrbuffer, 1); //Fin de chaine 
-		} else { 
-			Transmettre(*ptrbuffer, 0); //milieu du mot
-		}
-		ptrbuffer++;
-	}
-}*/
-void Send_char(char c){
-	// But : Fonction pour envoyer un caractère dans l'UART
-	// Input : 
-	//		- c : caractère à envoyer
-	// Output : 
-	//		none
-	//Desactive reception
-	REN0 = 0;
-	SBUF0 = c;
-	
-	//Attente fin de transmission
-	while(!TI0){}
-		
-	//Remise à 0 du flag d'envoi une fois qu'on est sur que le caractere a été transmis
-	TI0 = 0;
-	REN0 = 1;
-}
-
-void Transmettre(char caractere, bit LF){
-	// But : Fonction pour envoyer un caractère et la 
-	// Input : 
-	//		- caractere : char à envoyer
-	// Output : 
-	//		none
-	EA = 0;
-	//desactive la reception
-	REN0 = 0;
-	
-	//Ecrit la valeur dans SBUF0 pour transmettre
-	SBUF0 = caractere;
-	
-	//Attente de la bonne transmission
-	while(!TI0){}
-		
-	//Remise à 0 du flag d'envoi une fois qu'on est sur que le caractere a été transmis
-	TI0 = 0;
-	REN0 = 1;
-		
-	if(LF){Transmettre(0x0D, 0);
-	Transmettre(0x0A, 0);} //Retour à la ligne
-	EA = 1;
-}
-
-
-unsigned char CDE_Servo_H (char Angle){
-	AngleAVise = 10*Angle;
-	AngleAVise = AngleAVise + 1500;
-	AngleAVise = AngleAVise*1000;
-	AngleAVise = AngleAVise/543;
-	if (Angle-Angle_actuel > 0){
-	 temps = (Angle-Angle_actuel)*23/60;
-	}
-	else{
-	 temps = (Angle_actuel-Angle)*23/60;
-	}
-	Angle_actuel = Angle;
-	return temps;
-} 
-
-
-unsigned int MES_Dist_AV (void) {
-	ret = 0;
-	T2 = 65536 - 19;
-	ENVOI_AV = 1;
-	TR2 = 1;
-	while (!ECHO_AV){}
-	TR2 = 1;
-	while (ECHO_AV && !ret){}
-	TR2 = 0;
-	if (ret){ // Si on a overload
-		return 0;
-	}
-	else{ // On a pas Overload
-		return(((float)T2*9.362/1000)-200);
-	}
-}
-
-unsigned int MES_Dist_AR (void) {
-	ret = 0;
-	T2 = 65536 - 19;
-	ENVOI_AR = 1;
-	TR2 = 1;
-	while (!ECHO_AR && !ret){}
-	TR2 = 0;
-	if (ret){
-		return 0;
-	}
-	else{ // On a pas Overload
-		return(((float)T2*9.362/1000)-200);
-	}
-}
-
-
-void Timer4_ISR (void) interrupt 16 {
-		 	T4CON &= ~(1<<7); //TF4 = 1
-		 
-		 if(!Commande_H ){
-			 RCAP4 = 0xFFFF - (36832 - AngleAVise);
-	 }
-		 else {
-			 RCAP4 = 0xFFFF - (AngleAVise);
-		 }
-		 Commande_H = !Commande_H;
-}
-
-void ISR_T2(void) interrupt 5 {
-	
-	EXF2 = 0;
-	TF2 = 0;
-	if(ENVOI_AV || ENVOI_AR){
-		ENVOI_AV = 0;
-		ENVOI_AR = 0;
-		TR2 = 0;
-	}
-	else{	ret = 1;}
-}
-

@@ -1,10 +1,10 @@
-C51 COMPILER V9.60.0.0   F0_M1                                                             03/30/2021 17:39:39 PAGE 1   
+C51 COMPILER V9.59.0.0   F0_M1                                                             04/04/2021 17:16:12 PAGE 1   
 
 
-C51 COMPILER V9.60.0.0, COMPILATION OF MODULE F0_M1
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE F0_M1
 OBJECT MODULE PLACED IN .\Objects\F0_M1.obj
-COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE F0_M1.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listin
-                    -gs\F0_M1.lst) TABS(2) OBJECT(.\Objects\F0_M1.obj)
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE F0_M1.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\
+                    -F0_M1.lst) TABS(2) OBJECT(.\Objects\F0_M1.obj)
 
 line level    source
 
@@ -40,757 +40,863 @@ line level    source
   30          char message_is_ready;
   31          int j,k,m,fin_commande;
   32          signed int i;
-  33          
-  34          // Variables char[] 
-  35          char xdata buffer[5];
-  36          char xdata strings[8];
-  37          char xdata commande[35];
-  38          char xdata params[15];
-  39          char xdata message[35];
-  40          char asuppr[15] = "Test";
-  41          char* ptr_asuppr = &asuppr[0];
-  42          
-  43          // Variables pointeurs 
-  44          char* ptrcommande; 
-  45          char* ptrmessage;
-  46          char* ptrbuffer;
-  47          char* ptrstrings;
-  48          
-  49          struct argument_complexe args;
-  50          struct  COMMANDES commandeenvoieStA;
-  51          struct  INFORMATIONS informationenvoieAtS;
+  33          char bit_reception_UART0;
+  34          int iter_M1;
+  35          
+  36          // Variables char[] 
+  37          char xdata buffer[5];
+  38          char xdata strings[8];
+  39          char xdata commandes_M1[35];
+  40          char xdata commande[35];
+  41          char xdata params[15];
+  42          char xdata message[35];
+  43          char asuppr[15] = "Test";
+  44          char* ptr_asuppr = &asuppr[0];
+  45          
+  46          // Variables pointeurs 
+  47          char* ptrcommande; 
+  48          char* ptrcommandes_M1;
+  49          char* ptrmessage;
+  50          char* ptrbuffer;
+  51          char* ptrstrings;
   52          
-  53          char* split_element(char* ptr_commande) {
-  54   1        // But : Récupérer un paramètre (plusieurs char) et les placer dans un tableau globale. La fonction va
-C51 COMPILER V9.60.0.0   F0_M1                                                             03/30/2021 17:39:39 PAGE 2   
+  53          struct argument_complexe args;
+  54          struct  COMMANDES commandeenvoieStA;
+C51 COMPILER V9.59.0.0   F0_M1                                                             04/04/2021 17:16:12 PAGE 2   
 
-             - aussi passer un flag à 1 si la commande est finie ('\r'). 
-  55   1        // Input : 
-  56   1        //    - *ptr_commande : pointeur vers le buffer de la commande complète. 
-  57   1        // Output : 
-  58   1        //    - *ptr_commande : pointeur (incrémenté des m caractères parcourus) vers le buffer de la commande c
-             -omplète. 
-  59   1        m = 0;
-  60   1        // Tant que le char n'est pas un espace 
-  61   1        while( *ptr_commande != ' ') {
-  62   2          // Cas : le char est la fin de la commande  
-  63   2          if (*ptr_commande == '\r') {
-  64   3            // flag de fin modifié
-  65   3            fin_commande = 1;
-  66   3            break;
-  67   3            // Cas : char est "quelconque"
-  68   3          } else {
-  69   3            // Ajout dans le tableau params 
-  70   3            params[m] = *ptr_commande;
-  71   3            params[m+1] = '\0';
-  72   3            m++;
-  73   3            ptr_commande++;
+  55          struct  INFORMATIONS informationenvoieAtS;
+  56          
+  57          //-----------------------------------------------------------------------------
+  58          // Fonctions UART et d'envoie
+  59          //-----------------------------------------------------------------------------
+  60          
+  61          
+  62          void Send_string_UART0(char* mot){
+  63   1        // But : Fonction pour envoyer une string de manière automatique 
+  64   1        // Input : 
+  65   1        //    - mot : string avec les chars à envoyer (via pointeur)
+  66   1        // Output : 
+  67   1        //    none
+  68   1        // Tant que le char n'est pas la fin de la commande ('\r') 
+  69   1        while (*mot != '\0'){
+  70   2          if(*(mot+1) == '\r'){ 
+  71   3            Transmettre_UART0(*mot, 1); //Fin de chaine 
+  72   3          } else { 
+  73   3            Transmettre_UART0(*mot, 0); //milieu du mot
   74   3          }
-  75   2        }
-  76   1        // Saut de l'espace 
-  77   1        ptr_commande++;
-  78   1        return ptr_commande; 
-  79   1      }
-  80          
-  81          struct argument_complexe param_complexe(char* params) {
-  82   1        // But : Convertir string en paramètres complexe, forme : param:valeur (exemple : A:12) 
-  83   1        // Input : 
-  84   1        //    - *param : pointeur vers la string paramètres 
-  85   1        // Output : 
-  86   1        //    - args : structure composée de deux champs :
-  87   1        //          * param : nom du paramètre (1 char) 
-  88   1        //          * valeur : entier 
-  89   1        // Remarque : Si param plus de 1 char ? Idée : boucle jusqu'à ':'
-  90   1        args.param = params[0];
-  91   1        args.valeur = int_neg_or_positiv(2, params);
-  92   1        return args;
-  93   1      }
-  94          
-  95          int int_neg_or_positiv(int min, char* params) {
-  96   1        // But : Gestion du signe pour la convertion str vers int : ['-','1','2'] => -12
-  97   1        // Input : 
-  98   1        //    - min : int pour indiquer le début du nombre
-  99   1        //    - *param : pointeur vers la string contenat les chars 
- 100   1        // Output : 
- 101   1        //    - i : int signé 
- 102   1        // Cas : int négatif 
- 103   1        if (params[min] == '-') {
- 104   2          // Récupération de sa valeur absolue 
- 105   2          i = convertion_str_int(min+1, params);
- 106   2          // Passage en négatif 
- 107   2          i = 0-i;
- 108   2          // Cas : int positif
- 109   2        } else { i = convertion_str_int(min, params); }
- 110   1        return i; 
- 111   1      } 
- 112          
- 113          int convertion_str_int(int k, char* params) {
- 114   1        // But : Convertir plusieurs chars vers un int (absolue) : ['1','2'] => 12
-C51 COMPILER V9.60.0.0   F0_M1                                                             03/30/2021 17:39:39 PAGE 3   
+  75   2          mot++;
+  76   2        }
+  77   1      }
+  78          
+  79          void Send_char_UART0(char c){
+  80   1        // But : Fonction pour envoyer un caractère dans l'UART
+  81   1        // Input : 
+  82   1        //    - c : caractère à envoyer
+  83   1        // Output : 
+  84   1        //    none
+  85   1        //Desactive reception
+  86   1        REN0 = 0;
+  87   1        SBUF0 = c;
+  88   1        
+  89   1        //Attente fin de transmission
+  90   1        while(!TI0){}
+  91   1          
+  92   1        //Remise à 0 du flag d'envoi une fois qu'on est sur que le caractere a été transmis
+  93   1        TI0 = 0;
+  94   1        REN0 = 1;
+  95   1      }
+  96          
+  97          void Transmettre_UART0(char caractere, bit LF){
+  98   1        // But : Fonction pour envoyer un caractère et la 
+  99   1        // Input : 
+ 100   1        //    - caractere : char à envoyer
+ 101   1        // Output : 
+ 102   1        //    none
+ 103   1        EA = 0;
+ 104   1        //desactive la reception
+ 105   1        REN0 = 0;
+ 106   1        
+ 107   1        //Ecrit la valeur dans SBUF0 pour transmettre
+ 108   1        SBUF0 = caractere;
+ 109   1        
+ 110   1        //Attente de la bonne transmission
+ 111   1        while(!TI0){}
+ 112   1          
+ 113   1        //Remise à 0 du flag d'envoi une fois qu'on est sur que le caractere a été transmis
+ 114   1        TI0 = 0;
+ 115   1        REN0 = 1;
+ 116   1          
+C51 COMPILER V9.59.0.0   F0_M1                                                             04/04/2021 17:16:12 PAGE 3   
 
- 115   1        // Input : 
- 116   1        //    - k : int pour indiquer le début du nombre
- 117   1        //    - *param : pointeur vers la string contenat les chars 
- 118   1        // Output : 
- 119   1        //    - atoi(buffer) : int non signé
- 120   1        // Remarque : atoi() permet une convertion de char[] en int
- 121   1        // Boucle jusqu'à 10 (valeur arbitraire) 
- 122   1        for(j=k;j<10; j++){
- 123   2          // Si le char est un digit
- 124   2          if( params[j] == '1' || params[j] == '2'|| params[j] == '3'|| params[j] == '4'|| params[j] == '5'|| para
+ 117   1        if(LF){Transmettre_UART0(0x0D, 0);
+ 118   2        Transmettre_UART0(0x0A, 0);} //Retour à la ligne
+ 119   1        EA = 1;
+ 120   1      }
+ 121          
+ 122          char* split_element_M1(char* ptr_commande) {
+ 123   1        // But : Récupérer un paramètre (plusieurs char) et les placer dans un tableau globale. La fonction va
+             - aussi passer un flag à 1 si la commande est finie ('\r'). 
+ 124   1        // Input : 
+ 125   1        //    - *ptr_commande : pointeur vers le buffer de la commande complète. 
+ 126   1        // Output : 
+ 127   1        //    - *ptr_commande : pointeur (incrémenté des m caractères parcourus) vers le buffer de la commande c
+             -omplète. 
+ 128   1          m = 0;
+ 129   1        // Tant que le char n'est pas un espace 
+ 130   1        while( *ptr_commande != ' ') {
+ 131   2          // Cas : le char est la fin de la commande  
+ 132   2          if (*ptr_commande == '\r') {
+ 133   3            // flag de fin modifié
+ 134   3            fin_commande = 1;
+ 135   3            break;
+ 136   3            // Cas : char est "quelconque"
+ 137   3          } else {
+ 138   3            // Ajout dans le tableau params 
+ 139   3            params[m] = *ptr_commande;
+ 140   3            params[m+1] = '\0';
+ 141   3            m++;
+ 142   3            ptr_commande++;
+ 143   3          }
+ 144   2        }
+ 145   1        // Saut de l'espace 
+ 146   1        ptr_commande++;
+ 147   1        return ptr_commande; 
+ 148   1      }
+ 149          
+ 150          struct argument_complexe param_complexe(char* params) {
+ 151   1        // But : Convertir string en paramètres complexe, forme : param:valeur (exemple : A:12) 
+ 152   1        // Input : 
+ 153   1        //    - *param : pointeur vers la string paramètres 
+ 154   1        // Output : 
+ 155   1        //    - args : structure composée de deux champs :
+ 156   1        //          * param : nom du paramètre (1 char) 
+ 157   1        //          * valeur : entier 
+ 158   1        // Remarque : Si param plus de 1 char ? Idée : boucle jusqu'à ':'
+ 159   1        args.param = params[0];
+ 160   1        args.valeur = int_neg_or_positiv(2, params);
+ 161   1        return args;
+ 162   1      }
+ 163          
+ 164          int int_neg_or_positiv(int min, char* params) {
+ 165   1        // But : Gestion du signe pour la convertion str vers int : ['-','1','2'] => -12
+ 166   1        // Input : 
+ 167   1        //    - min : int pour indiquer le début du nombre
+ 168   1        //    - *param : pointeur vers la string contenat les chars 
+ 169   1        // Output : 
+ 170   1        //    - i : int signé 
+ 171   1        // Cas : int négatif 
+ 172   1        if (params[min] == '-') {
+ 173   2          // Récupération de sa valeur absolue 
+ 174   2          i = convertion_str_int_M1(min+1, params);
+ 175   2          // Passage en négatif 
+ 176   2          i = 0-i;
+C51 COMPILER V9.59.0.0   F0_M1                                                             04/04/2021 17:16:12 PAGE 4   
+
+ 177   2          // Cas : int positif
+ 178   2        } else { i = convertion_str_int_M1(min, params); }
+ 179   1        return i; 
+ 180   1      } 
+ 181          
+ 182          int convertion_str_int_M1(int k, char* params) {
+ 183   1        // But : Convertir plusieurs chars vers un int (absolue) : ['1','2'] => 12
+ 184   1        // Input : 
+ 185   1        //    - k : int pour indiquer le début du nombre
+ 186   1        //    - *param : pointeur vers la string contenat les chars 
+ 187   1        // Output : 
+ 188   1        //    - atoi(buffer) : int non signé
+ 189   1        // Remarque : atoi() permet une convertion de char[] en int
+ 190   1        // Boucle jusqu'à 10 (valeur arbitraire) 
+ 191   1        for(j=k;j<10; j++){
+ 192   2          // Si le char est un digit
+ 193   2          if( params[j] == '1' || params[j] == '2'|| params[j] == '3'|| params[j] == '4'|| params[j] == '5'|| para
              -ms[j] == '6'|| params[j] == '7'|| params[j] == '8'|| params[j] == '9'|| params[j] == '0') {
- 125   3            buffer[j-k]=params[j];
- 126   3          }
- 127   2          else { 
- 128   3            buffer[j-k]='\0';
- 129   3            break;
- 130   3          }
- 131   2        }
- 132   1        return atoi(buffer);    
- 133   1      }
- 134          
- 135          char* convertion_int_array(int i) {
- 136   1        // But : Convertir plusieurs chars vers un int (absolue) : ['1','2'] => 12
- 137   1        // Input : 
- 138   1        //  - i : int 
- 139   1        // Output : 
- 140   1        //  - ptr : vers le buffer qui contient les chars
- 141   1        k = 0;
- 142   1      if (i/1000 != 0) { 
- 143   2          buffer[k] = '0'+i/1000;
- 144   2          k++;
- 145   2          i = i-(i/1000)*1000;
- 146   2        
- 147   2        } else {
- 148   2            buffer[k] = '0';
- 149   2          k++;
- 150   2        }
- 151   1        if (i/100 != 0) { 
- 152   2          buffer[k] = '0'+i/100;
- 153   2          k++;
- 154   2          i = i-(i/100)*100;
- 155   2        } else {
- 156   2            buffer[k] = '0';
- 157   2          k++;
- 158   2        } 
- 159   1        if (i/10 != 0) { 
- 160   2          buffer[k] = '0'+i/10;
- 161   2          i = i-(i/10)*10;
- 162   2          k++;
- 163   2        } else {
- 164   2            buffer[k] = '0';
- 165   2          k++;
- 166   2        }
- 167   1        if (i != 0) { 
- 168   2          buffer[k] = '0'+i;
- 169   2          k++;
- 170   2        } else {
- 171   2            buffer[k] = '0';
- 172   2          k++;
- 173   2        }
- 174   1        buffer[k] = '\0';
- 175   1        return &buffer[0];
-C51 COMPILER V9.60.0.0   F0_M1                                                             03/30/2021 17:39:39 PAGE 4   
+ 194   3            buffer[j-k]=params[j];
+ 195   3          }
+ 196   2          else { 
+ 197   3            buffer[j-k]='\0';
+ 198   3            break;
+ 199   3          }
+ 200   2        }
+ 201   1        return atoi(buffer);    
+ 202   1      }
+ 203          
+ 204          char* convertion_int_array_M1(int i) {
+ 205   1        // But : Convertir plusieurs chars vers un int (absolue) : ['1','2'] => 12
+ 206   1        // Input : 
+ 207   1        //  - i : int 
+ 208   1        // Output : 
+ 209   1        //  - ptr : vers le buffer qui contient les chars
+ 210   1        k = 0;
+ 211   1      if (i/1000 != 0) { 
+ 212   2          buffer[k] = '0'+i/1000;
+ 213   2          k++;
+ 214   2          i = i-(i/1000)*1000;
+ 215   2        
+ 216   2        } else {
+ 217   2            buffer[k] = '0';
+ 218   2          k++;
+ 219   2        }
+ 220   1        if (i/100 != 0) { 
+ 221   2          buffer[k] = '0'+i/100;
+ 222   2          k++;
+ 223   2          i = i-(i/100)*100;
+ 224   2        } else {
+ 225   2            buffer[k] = '0';
+ 226   2          k++;
+ 227   2        } 
+ 228   1        if (i/10 != 0) { 
+ 229   2          buffer[k] = '0'+i/10;
+ 230   2          i = i-(i/10)*10;
+ 231   2          k++;
+ 232   2        } else {
+ 233   2            buffer[k] = '0';
+ 234   2          k++;
+ 235   2        }
+ 236   1        if (i != 0) { 
+ 237   2          buffer[k] = '0'+i;
+C51 COMPILER V9.59.0.0   F0_M1                                                             04/04/2021 17:16:12 PAGE 5   
 
- 176   1      }
- 177          
- 178          char* ajout_char_array(char* ptrbuffer, char* ptrmessage) {
- 179   1        // But : Convertir plusieurs chars vers un int (absolue) : ['1','2'] => 12
- 180   1        // Input : 
- 181   1        //    - *ptrmessage : pointeur vers le message
- 182   1        //    - *ptrbuffer : pointeur vers le buffer de int
- 183   1        // Output : 
- 184   1        //    none
- 185   1        while (1==1){
- 186   2          // Si le char est un digit
- 187   2          if( *ptrbuffer == '1' || *ptrbuffer == '2'|| *ptrbuffer == '3'|| *ptrbuffer == '4'|| *ptrbuffer == '5'||
+ 238   2          k++;
+ 239   2        } else {
+ 240   2            buffer[k] = '0';
+ 241   2          k++;
+ 242   2        }
+ 243   1        buffer[k] = '\0';
+ 244   1        return &buffer[0];
+ 245   1      }
+ 246          
+ 247          char* ajout_char_array(char* ptrbuffer, char* ptrmessage) {
+ 248   1        // But : Convertir plusieurs chars vers un int (absolue) : ['1','2'] => 12
+ 249   1        // Input : 
+ 250   1        //    - *ptrmessage : pointeur vers le message
+ 251   1        //    - *ptrbuffer : pointeur vers le buffer de int
+ 252   1        // Output : 
+ 253   1        //    none
+ 254   1        while (1==1){
+ 255   2          // Si le char est un digit
+ 256   2          if( *ptrbuffer == '1' || *ptrbuffer == '2'|| *ptrbuffer == '3'|| *ptrbuffer == '4'|| *ptrbuffer == '5'||
              - *ptrbuffer == '6'|| *ptrbuffer == '7'|| *ptrbuffer == '8'|| *ptrbuffer == '9'|| *ptrbuffer == '0') {
- 188   3            ptrmessage = ajout_char(ptrmessage, *ptrbuffer);
- 189   3            ptrbuffer++;
- 190   3          }
- 191   2          else { 
- 192   3            return ptrmessage;
- 193   3          }
- 194   2        }
- 195   1      }
- 196          
- 197          char* ajout_char_string(char* ptrstrings, char* ptrmessage) {
- 198   1        // But : Convertir plusieurs chars vers un int (absolue) : ['1','2'] => 12
- 199   1        // Input : 
- 200   1        //    - *ptrmessage : pointeur vers le message
- 201   1        //    - *ptrbuffer : pointeur vers le buffer de int
- 202   1        // Output : 
- 203   1        //    none
- 204   1        while (1==1){
- 205   2          // Si le char est un digit
- 206   2          if( *ptrstrings != '\0') {
- 207   3            ptrmessage = ajout_char(ptrmessage, *ptrstrings);
- 208   3            ptrstrings++;
- 209   3          }
- 210   2          else { 
- 211   3            return ptrmessage;
- 212   3          }
- 213   2        }
- 214   1      }
- 215          
- 216          char* ajout_char(char* ptrmessage, char c) {
- 217   1        // But : Ajout d'un char sur message
- 218   1        // Input : 
- 219   1        //    - ptrmessage : pointeur vers le message
- 220   1        //    - char : char à ajouter 
- 221   1        // Output : 
- 222   1        //    - ptrmessage : pointeur incrémenté
- 223   1        *ptrmessage = c;
- 224   1        ptrmessage++;
- 225   1        //*ptrmessage = '\0';
- 226   1        return ptrmessage;
- 227   1      }
- 228          
- 229          //-----------------------------------------------------------------------------
- 230          // Fonctions Convertion String vers Structure
- 231          //-----------------------------------------------------------------------------
- 232          
- 233          struct COMMANDES Convertion_S_to_A(char * ptrcommande) {
- 234   1        // But : Récupérer la partie commande et appeler les fonctions correspondante
- 235   1        // Input : 
- 236   1        //    none
-C51 COMPILER V9.60.0.0   F0_M1                                                             03/30/2021 17:39:39 PAGE 5   
+ 257   3            ptrmessage = ajout_char(ptrmessage, *ptrbuffer);
+ 258   3            ptrbuffer++;
+ 259   3          }
+ 260   2          else { 
+ 261   3            return ptrmessage;
+ 262   3          }
+ 263   2        }
+ 264   1      }
+ 265          
+ 266          char* ajout_char_string(char* ptrstrings, char* ptrmessage) {
+ 267   1        // But : Convertir plusieurs chars vers un int (absolue) : ['1','2'] => 12
+ 268   1        // Input : 
+ 269   1        //    - *ptrmessage : pointeur vers le message
+ 270   1        //    - *ptrbuffer : pointeur vers le buffer de int
+ 271   1        // Output : 
+ 272   1        //    none
+ 273   1        while (1==1){
+ 274   2          // Si le char est un digit
+ 275   2          if( *ptrstrings != '\0') {
+ 276   3            ptrmessage = ajout_char(ptrmessage, *ptrstrings);
+ 277   3            ptrstrings++;
+ 278   3          }
+ 279   2          else { 
+ 280   3            return ptrmessage;
+ 281   3          }
+ 282   2        }
+ 283   1      }
+ 284          
+ 285          char* ajout_char(char* ptrmessage, char c) {
+ 286   1        // But : Ajout d'un char sur message
+ 287   1        // Input : 
+ 288   1        //    - ptrmessage : pointeur vers le message
+ 289   1        //    - char : char à ajouter 
+ 290   1        // Output : 
+ 291   1        //    - ptrmessage : pointeur incrémenté
+ 292   1        *ptrmessage = c;
+ 293   1        ptrmessage++;
+ 294   1        //*ptrmessage = '\0';
+ 295   1        return ptrmessage;
+ 296   1      }
+ 297          
+ 298          struct COMMANDES recuperation_structure_commande(struct COMMANDES pCommandeenvoieStA)
+C51 COMPILER V9.59.0.0   F0_M1                                                             04/04/2021 17:16:12 PAGE 6   
 
- 237   1        // Output : 
- 238   1        //    none
- 239   1        // Remarque : strcmp() permet de chercher une suite de char dans un autre.
- 240   1        // Remarque : A vérifier que je n'ai pas oublier de fonction comme le son ou MOU ... 
- 241   1        
- 242   1        // Récupération de la partie commande dans le tableau params
- 243   1        ptrcommande = split_element(ptrcommande);
- 244   1        commande_connue = 1;
- 245   1        fin_commande = 0;
- 246   1        
- 247   1        // Test des différents cas de figures 
- 248   1        if (params[0] == 'D' || params[0] == 'E' || params[0] == 'Q') {
- 249   2            Convertion_Etat(params[0],ptrcommande);
- 250   2        } else if (strcmp(params, "ASS") == 0) { 
- 251   2            Convertion_Sonore(ptrcommande);
- 252   2        } else if (strcmp(params, "MOB") == 0 ) {
- 253   2            Convertion_Detection(ptrcommande);
- 254   2        } else if (strcmp(params, "CS") == 0) {
- 255   2            Convertion_Servomoteur(ptrcommande);
- 256   2        } else if (strcmp(params, "MI") == 0 || strcmp(params, "ME") == 0 ) {
- 257   2            if (strcmp(params, "MI") == 0) {  commandeenvoieStA.Etat_Energie = Mesure_I; }
- 258   2            else { commandeenvoieStA.Etat_Energie = Mesure_E;}
- 259   2        }else if (strcmp(params, "IPO") == 0 || strcmp(params, "POS") == 0) {
- 260   2            Convertion_Coord(params,ptrcommande);
- 261   2        } else if (strcmp(params, "L") == 0 || strcmp(params, "LS") == 0 ) {
- 262   2            Convertion_Lumineux(params, ptrcommande);
- 263   2        }else if (strcmp(params, "PPH") == 0 || strcmp(params, "SPH") == 0 ) {
- 264   2            Convertion_Photo(params, ptrcommande);
- 265   2        } else if (params[0] == 'A' || params[0] == 'B' || params[0] == 'S' || params[0] == 'G'|| strcmp(params, 
-             -"RD") == 0 || strcmp(params, "RG") == 0 || strcmp(params, "RC") == 0 || strcmp(params, "RA") == 0|| strcmp(params, "TV")
-             - == 0) { 
- 266   2            Convertion_Mouvement(params,ptrcommande);
- 267   2        } else {
- 268   2            commande_connue = 0;
- 269   2        }
- 270   1        
- 271   1        // Partie Réponse : 
- 272   1        ptrmessage = &message[0];
- 273   1        ptrmessage = ajout_char(ptrmessage, 0x0D);
- 274   1        ptrmessage = ajout_char(ptrmessage, 0x0A);
- 275   1        if (commande_connue == 1) { ptrmessage = ajout_char(ptrmessage, 0x3E);  }
- 276   1        else {  ptrmessage = ajout_char(ptrmessage, 0x23); }
- 277   1        ptrmessage = ajout_char(ptrmessage, '\r');
- 278   1        ptrmessage = &message[0];
- 279   1        return commandeenvoieStA;
- 280   1      } 
- 281             
- 282          void Convertion_Etat(char etat, char* ptrcommande) {
- 283   1        // But : Fonction pour les modifications de l'état d'épreuve
- 284   1        // Input : 
- 285   1        //    - etat : char qui définie l'état 
- 286   1        //    - *ptrcommande : pointeur vers les paramètres possibles 
- 287   1        // Output : 
- 288   1        //    none
- 289   1        // Cas D : Commencez étape 
- 290   1          
- 291   1        if (etat == 'D') {
- 292   2          // Valeur par défaut 
- 293   2          commandeenvoieStA.Etat_Epreuve = epreuve1;
- 294   2          // Récupération et convertion de l'étape : 
- 295   2          ptrcommande = split_element(ptrcommande);
- 296   2          
-C51 COMPILER V9.60.0.0   F0_M1                                                             03/30/2021 17:39:39 PAGE 6   
+ 299          {
+ 300   1        // Partie Réception 
+ 301   1        if (RI0 == 1){
+ 302   2          commandeenvoieStA = pCommandeenvoieStA;
+ 303   2          RI0 = 0;
+ 304   2          REN0 = 0;
+ 305   2          // Récupération du char dans le buffer
+ 306   2          bit_reception_UART0 = SBUF0;
+ 307   2          // Ajout du char dans la string commande 
+ 308   2          commandes_M1[iter_M1] = bit_reception_UART0;
+ 309   2          commandes_M1[iter_M1+1] = '\0';
+ 310   2          Send_char_UART0(bit_reception_UART0);
+ 311   2          // Incrément du tab commande
+ 312   2          iter_M1++;
+ 313   2          // Si fin de commande 
+ 314   2          if (bit_reception_UART0 == '\r'){
+ 315   3            // Affichage en console
+ 316   3            Send_string_UART0("Commande recue : ");
+ 317   3            Send_string_UART0(commandes_M1);
+ 318   3            ptrcommandes_M1 = &commandes_M1[0];
+ 319   3            
+ 320   3            // Convertion de commande vers struct
+ 321   3            pCommandeenvoieStA = Convertion_S_to_A(ptrcommandes_M1);
+ 322   3            iter_M1 = 0;
+ 323   3          }
+ 324   2        }
+ 325   1        return pCommandeenvoieStA;
+ 326   1      }
+ 327          
+ 328          //-----------------------------------------------------------------------------
+ 329          // Fonctions Convertion String vers Structure
+ 330          //-----------------------------------------------------------------------------
+ 331          
+ 332          struct COMMANDES Convertion_S_to_A(char * ptrcommande) {
+ 333   1        // But : Récupérer la partie commande et appeler les fonctions correspondante
+ 334   1        // Input : 
+ 335   1        //    none
+ 336   1        // Output : 
+ 337   1        //    none
+ 338   1        // Remarque : strcmp() permet de chercher une suite de char dans un autre.
+ 339   1        // Remarque : A vérifier que je n'ai pas oublier de fonction comme le son ou MOU ... 
+ 340   1        
+ 341   1        // Récupération de la partie commande dans le tableau params
+ 342   1        ptrcommande = split_element_M1(ptrcommande);
+ 343   1        commande_connue = 1;
+ 344   1        fin_commande = 0;
+ 345   1        
+ 346   1        // Test des différents cas de figures 
+ 347   1        if (params[0] == 'D' || params[0] == 'E' || params[0] == 'Q') {
+ 348   2            Convertion_Etat(params[0],ptrcommande);
+ 349   2        } else if (strcmp(params, "ASS") == 0) { 
+ 350   2            Convertion_Sonore(ptrcommande);
+ 351   2        } else if (strcmp(params, "MOB") == 0 ) {
+ 352   2            Convertion_Detection(ptrcommande);
+ 353   2        } else if (strcmp(params, "CS") == 0) {
+ 354   2            Convertion_Servomoteur(ptrcommande);
+ 355   2        } else if (strcmp(params, "MI") == 0 || strcmp(params, "ME") == 0 ) {
+ 356   2            if (strcmp(params, "MI") == 0) {  commandeenvoieStA.Etat_Energie = Mesure_I; }
+ 357   2            else { commandeenvoieStA.Etat_Energie = Mesure_E;}
+ 358   2        }else if (strcmp(params, "IPO") == 0 || strcmp(params, "POS") == 0) {
+ 359   2            Convertion_Coord(params,ptrcommande);
+ 360   2        } else if (strcmp(params, "L") == 0 || strcmp(params, "LS") == 0 ) {
+C51 COMPILER V9.59.0.0   F0_M1                                                             04/04/2021 17:16:12 PAGE 7   
 
- 297   2          i = int_neg_or_positiv(0,params);
- 298   2          // Modification de la structure en fonction 
- 299   2          if ( i == 1 ) { commandeenvoieStA.Etat_Epreuve = epreuve1;  }
- 300   2          else if ( i == 2 ) {commandeenvoieStA.Etat_Epreuve = epreuve2;}
- 301   2          else if ( i == 3 ) {commandeenvoieStA.Etat_Epreuve = epreuve3;}
- 302   2          else if ( i == 4 ) {commandeenvoieStA.Etat_Epreuve = epreuve4;}
- 303   2          else if ( i == 5 ) {commandeenvoieStA.Etat_Epreuve = epreuve5;}
- 304   2          else if ( i == 6 ) {commandeenvoieStA.Etat_Epreuve = epreuve6;}
- 305   2          else if ( i == 7 ) {commandeenvoieStA.Etat_Epreuve = epreuve7;}
- 306   2          else if ( i == 8 ) {commandeenvoieStA.Etat_Epreuve = epreuve8;}
- 307   2          // Cas E : Fin de l'épreuve 
- 308   2        } else if (etat == 'E') {commandeenvoieStA.Etat_Epreuve = Fin_Epreuve; }
- 309   1        // Cas Q : Arrêt de l'épreuve
- 310   1        else { commandeenvoieStA.Etat_Epreuve = Stop_Urgence; }
- 311   1      }
- 312          
- 313          void Convertion_Mouvement(char *mouvement, char* ptrcommande) {
- 314   1        // But : Fonction de gestion des mouvements
- 315   1        // Input : 
- 316   1        //    - *mouvement : pointeur pour connaitre le type de mouvement 
- 317   1        //    - *ptrcommande : pointeur vers les paramètres possibles 
- 318   1        // Output : 
- 319   1        //    none
- 320   1        // Cas : Modification vitesse 
- 321   1        if (strcmp(mouvement, "TV") == 0) {
- 322   2                // Récupération du premier paramètre
- 323   2              ptrcommande = split_element(ptrcommande);
- 324   2              j = int_neg_or_positiv(0, params);
- 325   2              if (j > 5 && j< 100) { 
- 326   3                commandeenvoieStA.Vitesse = j;  
- 327   3              }
- 328   2        // Cas : Avancer ou reculer
- 329   2        } else if (mouvement[0] == 'A'|| mouvement[0] == 'B') {
- 330   2              // Modification de la structure avec l'action 
- 331   2              if (mouvement[0] == 'A') { commandeenvoieStA.Etat_Mouvement = Avancer; }
- 332   2              else { commandeenvoieStA.Etat_Mouvement = Reculer; }
- 333   2              if (fin_commande == 0) {
- 334   3                ptrcommande = split_element(ptrcommande);
- 335   3                // Convertion du param
- 336   3                j = int_neg_or_positiv(0, params);
- 337   3                // Modification de la vitesse
- 338   3                if (j > 5 && j<100) {commandeenvoieStA.Vitesse = j; }
- 339   3              }
- 340   2              if (commandeenvoieStA.Vitesse == 0) {commandeenvoieStA.Vitesse = 20;}
- 341   2        // Cas : Stop le mouvement
- 342   2        } else if (mouvement[0]== 'S') {
- 343   2            commandeenvoieStA.Etat_Mouvement = Stopper;
- 344   2        // Cas : Tourner à droite de 90° 
- 345   2        } else if (strcmp(mouvement, "RD") == 0) {
- 346   2            commandeenvoieStA.Etat_Mouvement = Rot_90D;
- 347   2        // Cas : Tourner à gauche de 90°
- 348   2        } else if (strcmp(mouvement, "RG") == 0) {
- 349   2            commandeenvoieStA.Etat_Mouvement = Rot_90G;
- 350   2        // Cas : Rotation de 180°
- 351   2        } else if (strcmp(mouvement, "RC") == 0) {
- 352   2            commandeenvoieStA.Etat_Mouvement = Rot_180D;
- 353   2            if (fin_commande == 0) {
- 354   3              ptrcommande = split_element(ptrcommande);
- 355   3              // Cas : Droite 
- 356   3              if (params[0] == 'D') { commandeenvoieStA.Etat_Mouvement = Rot_180D; }
- 357   3              // Cas : Gauche
- 358   3              else if (params[0] == 'G'){ commandeenvoieStA.Etat_Mouvement = Rot_180G; }
-C51 COMPILER V9.60.0.0   F0_M1                                                             03/30/2021 17:39:39 PAGE 7   
+ 361   2            Convertion_Lumineux(params, ptrcommande);
+ 362   2        }else if (strcmp(params, "PPH") == 0 || strcmp(params, "SPH") == 0 ) {
+ 363   2            Convertion_Photo(params, ptrcommande);
+ 364   2        } else if (params[0] == 'A' || params[0] == 'B' || params[0] == 'S' || strcmp(params, "RD") == 0 || strcm
+             -p(params, "RG") == 0 || strcmp(params, "RC") == 0 || strcmp(params, "RA") == 0|| strcmp(params, "TV") == 0) {
+ 365   2          if (commandeenvoieStA.Etat_Mouvement != Depl_Coord){
+ 366   3            Convertion_Mouvement(params,ptrcommande);}
+ 367   2        } else if (params[0] == 'G'){
+ 368   2            Convertion_Coord_Init(ptrcommande);
+ 369   2        } else {
+ 370   2            commande_connue = 0;
+ 371   2        }
+ 372   1        
+ 373   1        // Partie Réponse : 
+ 374   1        ptrmessage = &message[0];
+ 375   1        ptrmessage = ajout_char(ptrmessage, 0x0D);
+ 376   1        ptrmessage = ajout_char(ptrmessage, 0x0A);
+ 377   1        if (commande_connue == 1) { ptrmessage = ajout_char(ptrmessage, 0x3E);  }
+ 378   1        else {  ptrmessage = ajout_char(ptrmessage, 0x23); }
+ 379   1        ptrmessage = ajout_char(ptrmessage, '\r');
+ 380   1        ptrmessage = &message[0];
+ 381   1        return commandeenvoieStA;
+ 382   1      } 
+ 383             
+ 384          void Convertion_Etat(char etat, char* ptrcommande) {
+ 385   1        // But : Fonction pour les modifications de l'état d'épreuve
+ 386   1        // Input : 
+ 387   1        //    - etat : char qui définie l'état 
+ 388   1        //    - *ptrcommande : pointeur vers les paramètres possibles 
+ 389   1        // Output : 
+ 390   1        //    none
+ 391   1        // Cas D : Commencez étape 
+ 392   1          
+ 393   1        if (etat == 'D') {
+ 394   2          // Valeur par défaut 
+ 395   2          commandeenvoieStA.Etat_Epreuve = epreuve1;
+ 396   2          // Récupération et convertion de l'étape : 
+ 397   2          ptrcommande = split_element_M1(ptrcommande);
+ 398   2          
+ 399   2          i = int_neg_or_positiv(0,params);
+ 400   2          // Modification de la structure en fonction 
+ 401   2          if ( i == 1 ) { commandeenvoieStA.Etat_Epreuve = epreuve1;  }
+ 402   2          else if ( i == 2 ) {commandeenvoieStA.Etat_Epreuve = epreuve2;}
+ 403   2          else if ( i == 3 ) {commandeenvoieStA.Etat_Epreuve = epreuve3;}
+ 404   2          else if ( i == 4 ) {commandeenvoieStA.Etat_Epreuve = epreuve4;}
+ 405   2          else if ( i == 5 ) {commandeenvoieStA.Etat_Epreuve = epreuve5;}
+ 406   2          else if ( i == 6 ) {commandeenvoieStA.Etat_Epreuve = epreuve6;}
+ 407   2          else if ( i == 7 ) {commandeenvoieStA.Etat_Epreuve = epreuve7;}
+ 408   2          else if ( i == 8 ) {commandeenvoieStA.Etat_Epreuve = epreuve8;}
+ 409   2          // Cas E : Fin de l'épreuve 
+ 410   2        } else if (etat == 'E') {commandeenvoieStA.Etat_Epreuve = Fin_Epreuve; }
+ 411   1        // Cas Q : Arrêt de l'épreuve
+ 412   1        else { commandeenvoieStA.Etat_Epreuve = Stop_Urgence; }
+ 413   1      }
+ 414          
+ 415          void Convertion_Mouvement(char *mouvement, char* ptrcommande) {
+ 416   1        // But : Fonction de gestion des mouvements
+ 417   1        // Input : 
+ 418   1        //    - *mouvement : pointeur pour connaitre le type de mouvement 
+ 419   1        //    - *ptrcommande : pointeur vers les paramètres possibles 
+ 420   1        // Output : 
+ 421   1        //    none
+C51 COMPILER V9.59.0.0   F0_M1                                                             04/04/2021 17:16:12 PAGE 8   
 
- 359   3            }
- 360   2            // Cas : Rotation d'un angle
- 361   2        } else if (strcmp(mouvement, "RA") == 0) {
- 362   2              // Valeurs par défaut 
- 363   2              commandeenvoieStA.Etat_Mouvement =Rot_AngD;
- 364   2              commandeenvoieStA.Angle = 90; 
- 365   2            if (fin_commande == 0) {
- 366   3              ptrcommande = split_element(ptrcommande);
- 367   3              // Convertion du param en struct
- 368   3              if (params[1] == ':') {
- 369   4                args = param_complexe(params);
- 370   4                // Cas : Droite ou Gauche
- 371   4                if (args.param == 'D') {commandeenvoieStA.Etat_Mouvement =Rot_AngD; }
- 372   4                else if (args.param == 'G'){commandeenvoieStA.Etat_Mouvement =RotAngG;}
- 373   4                // Ajout de l'angle
- 374   4                commandeenvoieStA.Angle = args.valeur;
- 375   4              }
- 376   3            }
- 377   2        } else if (strcmp(mouvement, "G") == 0) {
- 378   2            while (fin_commande == 0) {
- 379   3                // Récupérations et convertions des paramètres 
- 380   3                ptrcommande = split_element(ptrcommande);
- 381   3                // Si l'argument est complexe
- 382   3                if (params[1] == ':') {
- 383   4                  args = param_complexe(params);
- 384   4                  // Différents cas possibles 
- 385   4                  if ( args.param == 'X') {
- 386   5                    if ( args.valeur > -99 && args.valeur < 99) {
- 387   6                      commandeenvoieStA.Coord_X = args.valeur;
- 388   6                    }
- 389   5                  } else if ( args.param == 'Y') {
- 390   5                    if ( args.valeur > -99 && args.valeur < 99) {
- 391   6                      commandeenvoieStA.Coord_Y = args.valeur;
- 392   6                    }
- 393   5                  } else if ( args.param == 'A') {
- 394   5                    if ( args.valeur > -180 && args.valeur < 180) {
- 395   6                      commandeenvoieStA.Angle = args.valeur;
- 396   6                    }
- 397   5                  }
- 398   4                }  // Sinon, ignoré  
- 399   3            } 
- 400   2        }
- 401   1      }       
- 402          
- 403          
- 404          void  Convertion_Sonore(char* ptrcommande){ 
- 405   1        // But : Modification de l'état sonore
- 406   1        // Input : 
- 407   1        //    - *ptrcommande : pointeur vers les paramètres possibles 
- 408   1        // Output : 
- 409   1        //    none
- 410   1        // Valeurs par défauts
- 411   1        ptrcommande = split_element(ptrcommande);
- 412   1            if (*ptrcommande == '0') { commandeenvoieStA.Etat_ACQ_Son = ACQ_non; }
- 413   1            else {
- 414   2              commandeenvoieStA.Etat_ACQ_Son = ACQ_oui;
- 415   2                i = int_neg_or_positiv(0, params);
- 416   2                if (i > 0 && i < 100) { commandeenvoieStA.ACQ_Duree = i; }
- 417   2                else { commandeenvoieStA.ACQ_Duree = 99; }
- 418   2            }
- 419   1          }
- 420          void Convertion_Detection(char* ptrcommande) {
-C51 COMPILER V9.60.0.0   F0_M1                                                             03/30/2021 17:39:39 PAGE 8   
+ 422   1        // Cas : Modification vitesse 
+ 423   1        if (strcmp(mouvement, "TV") == 0) {
+ 424   2                // Récupération du premier paramètre
+ 425   2              ptrcommande = split_element_M1(ptrcommande);
+ 426   2              j = int_neg_or_positiv(0, params);
+ 427   2              if (j > 5 && j< 100) { 
+ 428   3                commandeenvoieStA.Vitesse = j;  
+ 429   3              }
+ 430   2        // Cas : Avancer ou reculer
+ 431   2        } else if (mouvement[0] == 'A'|| mouvement[0] == 'B') {
+ 432   2              // Modification de la structure avec l'action 
+ 433   2              if (mouvement[0] == 'A') { commandeenvoieStA.Etat_Mouvement = Avancer; }
+ 434   2              else { commandeenvoieStA.Etat_Mouvement = Reculer; }
+ 435   2              if (fin_commande == 0) {
+ 436   3                ptrcommande = split_element_M1(ptrcommande);
+ 437   3                // Convertion du param
+ 438   3                j = int_neg_or_positiv(0, params);
+ 439   3                // Modification de la vitesse
+ 440   3                if (j > 5 && j<100) {commandeenvoieStA.Vitesse = j; }
+ 441   3              }
+ 442   2              if (commandeenvoieStA.Vitesse == 0) {commandeenvoieStA.Vitesse = 20;}
+ 443   2        // Cas : Stop le mouvement
+ 444   2        } else if (mouvement[0]== 'S') {
+ 445   2            commandeenvoieStA.Etat_Mouvement = Stopper;
+ 446   2        // Cas : Tourner à droite de 90° 
+ 447   2        } else if (strcmp(mouvement, "RD") == 0) {
+ 448   2            commandeenvoieStA.Etat_Mouvement = Rot_90D;
+ 449   2        // Cas : Tourner à gauche de 90°
+ 450   2        } else if (strcmp(mouvement, "RG") == 0) {
+ 451   2            commandeenvoieStA.Etat_Mouvement = Rot_90G;
+ 452   2        // Cas : Rotation de 180°
+ 453   2        } else if (strcmp(mouvement, "RC") == 0) {
+ 454   2            commandeenvoieStA.Etat_Mouvement = Rot_180D;
+ 455   2            if (fin_commande == 0) {
+ 456   3              ptrcommande = split_element_M1(ptrcommande);
+ 457   3              // Cas : Droite 
+ 458   3              if (params[0] == 'D') { commandeenvoieStA.Etat_Mouvement = Rot_180D; }
+ 459   3              // Cas : Gauche
+ 460   3              else if (params[0] == 'G'){ commandeenvoieStA.Etat_Mouvement = Rot_180G; }
+ 461   3            }
+ 462   2            // Cas : Rotation d'un angle
+ 463   2        } else if (strcmp(mouvement, "RA") == 0) {
+ 464   2              // Valeurs par défaut 
+ 465   2              commandeenvoieStA.Etat_Mouvement =Rot_AngD;
+ 466   2              commandeenvoieStA.Angle = 90; 
+ 467   2            if (fin_commande == 0) {
+ 468   3              ptrcommande = split_element_M1(ptrcommande);
+ 469   3              // Convertion du param en struct
+ 470   3              if (params[1] == ':') {
+ 471   4                args = param_complexe(params);
+ 472   4                // Cas : Droite ou Gauche
+ 473   4                if (args.param == 'D') {commandeenvoieStA.Etat_Mouvement =Rot_AngD; }
+ 474   4                else if (args.param == 'G'){commandeenvoieStA.Etat_Mouvement =Rot_AngG;}
+ 475   4                // Ajout de l'angle
+ 476   4                commandeenvoieStA.Angle = args.valeur;
+ 477   4            }
+ 478   3          }
+ 479   2        } 
+ 480   1      }     
+ 481          
+ 482          void Convertion_Coord_Init(char* ptrcommande)
+ 483          {
+C51 COMPILER V9.59.0.0   F0_M1                                                             04/04/2021 17:16:12 PAGE 9   
 
- 421   1        // But : Fonction de gestion de la détection d'obstacle
- 422   1        // Input : 
- 423   1        //    - *ptrcommande : pointeur vers les paramètres possibles 
- 424   1        // Output : 
- 425   1        //    none
- 426   1        // Valeurs par défauts
- 427   1        commandeenvoieStA.DCT_Obst_Resolution = 30;
- 428   1        commandeenvoieStA.Etat_DCT_Obst = oui_360;
- 429   1        // Boucle des paramètres
- 430   1        while (fin_commande == 0) {
- 431   2          // Récupération du paramètre
- 432   2          ptrcommande = split_element(ptrcommande);
- 433   2          // Cas : Angle détection
- 434   2          if( params[0] == '1' || params[0] == '0'|| params[0] == '2') {
- 435   3            i = int_neg_or_positiv(0, params);
- 436   3            if (i == 0) { commandeenvoieStA.Etat_DCT_Obst = DCT_non;}
- 437   3            else if (i == 1) {commandeenvoieStA.Etat_DCT_Obst = oui_180;}
- 438   3            else {commandeenvoieStA.Etat_DCT_Obst = oui_360;}
- 439   3          }
- 440   2          // Cas :Résolution angulaire
- 441   2          if (params[0] == 'A' ) {
- 442   3            args = param_complexe(params);
- 443   3            if (args.valeur > 5 && args.valeur < 45) {commandeenvoieStA.DCT_Obst_Resolution = args.valeur;}
- 444   3            else { commandeenvoieStA.DCT_Obst_Resolution = 30; }
- 445   3          } 
- 446   2        }
- 447   1      }
- 448          void Convertion_Servomoteur(char* ptrcommande) {  
- 449   1        // But : Fonction de gestion des servomoteurs
- 450   1        // Input : 
- 451   1        //    - *ptrcommande : pointeur vers les paramètres possibles 
- 452   1        // Output : 
- 453   1        //    none
- 454   1        // Valeurs par défauts
- 455   1        commandeenvoieStA.Servo_Angle = 0;
- 456   1        commandeenvoieStA.Etat_Servo = Servo_H;
- 457   1        // Tant que l'on a des paramètres : 
- 458   1        while (fin_commande == 0) {
- 459   2          // Récupération des paramètres
- 460   2          ptrcommande = split_element(ptrcommande);
- 461   2          
- 462   2          // Cas : Servomoteur Horizontale
- 463   2          if (params[0] == 'H') { commandeenvoieStA.Etat_Servo = Servo_H; }
- 464   2          // Cas : Servomoteur Verticale
- 465   2          if (params[0] == 'V') { 
- 466   3            commandeenvoieStA.Etat_Servo = Servo_V; }
- 467   2          // Ajout de l'angle
- 468   2          if (params[0] == 'A') {
- 469   3            args = param_complexe(params);  
- 470   3            commandeenvoieStA.Servo_Angle = args.valeur;
- 471   3          }
- 472   2        }
- 473   1      }
- 474          
- 475          void Convertion_Coord(char* params,char* ptrcommande) { 
- 476   1        // But : Fonction de gestion des coordonnées
- 477   1        // Input : 
- 478   1        //    - *params : pointeur vers le type de commande
- 479   1        //    - *ptrcommande : pointeur vers les paramètres possibles 
- 480   1        // Output : 
- 481   1        //    none
- 482   1        // Cas : Initialisation de coord
-C51 COMPILER V9.60.0.0   F0_M1                                                             03/30/2021 17:39:39 PAGE 9   
+ 484   1        while (fin_commande == 0) {
+ 485   2          // Récupérations et convertions des paramètres 
+ 486   2          ptrcommande = split_element_M1(ptrcommande);
+ 487   2          // Si l'argument est complexe
+ 488   2          if (params[1] == ':') {
+ 489   3            args = param_complexe(params);
+ 490   3            // Différents cas possibles 
+ 491   3            if ( args.param == 'X') {
+ 492   4              if ( args.valeur > -99 && args.valeur < 99) {
+ 493   5                commandeenvoieStA.Coord_X = args.valeur;
+ 494   5              }
+ 495   4            } else if ( args.param == 'Y') {
+ 496   4              if ( args.valeur > -99 && args.valeur < 99) {
+ 497   5                commandeenvoieStA.Coord_Y = args.valeur;
+ 498   5              }
+ 499   4            } else if ( args.param == 'A') {
+ 500   4              if ( args.valeur > -180 && args.valeur < 180) {
+ 501   5                commandeenvoieStA.Angle = args.valeur;
+ 502   5              }
+ 503   4            }
+ 504   3          }
+ 505   2        } 
+ 506   1      }
+ 507          
+ 508          void  Convertion_Sonore(char* ptrcommande){ 
+ 509   1        // But : Modification de l'état sonore
+ 510   1        // Input : 
+ 511   1        //    - *ptrcommande : pointeur vers les paramètres possibles 
+ 512   1        // Output : 
+ 513   1        //    none
+ 514   1        // Valeurs par défauts
+ 515   1        ptrcommande = split_element_M1(ptrcommande);
+ 516   1            if (*ptrcommande == '0') { commandeenvoieStA.Etat_ACQ_Son = ACQ_non; }
+ 517   1            else {
+ 518   2              commandeenvoieStA.Etat_ACQ_Son = ACQ_oui;
+ 519   2                i = int_neg_or_positiv(0, params);
+ 520   2                if (i > 0 && i < 100) { commandeenvoieStA.ACQ_Duree = i; }
+ 521   2                else { commandeenvoieStA.ACQ_Duree = 99; }
+ 522   2            }
+ 523   1          }
+ 524          void Convertion_Detection(char* ptrcommande) {
+ 525   1        // But : Fonction de gestion de la détection d'obstacle
+ 526   1        // Input : 
+ 527   1        //    - *ptrcommande : pointeur vers les paramètres possibles 
+ 528   1        // Output : 
+ 529   1        //    none
+ 530   1        // Valeurs par défauts
+ 531   1        commandeenvoieStA.DCT_Obst_Resolution = 30;
+ 532   1        commandeenvoieStA.Etat_DCT_Obst = oui_360;
+ 533   1        // Boucle des paramètres
+ 534   1        while (fin_commande == 0) {
+ 535   2          // Récupération du paramètre
+ 536   2          ptrcommande = split_element_M1(ptrcommande);
+ 537   2          // Cas : Angle détection
+ 538   2          if( params[0] == '1' || params[0] == '0'|| params[0] == '2') {
+ 539   3            i = int_neg_or_positiv(0, params);
+ 540   3            if (i == 0) { commandeenvoieStA.Etat_DCT_Obst = DCT_non;}
+ 541   3            else if (i == 1) {commandeenvoieStA.Etat_DCT_Obst = oui_180;}
+ 542   3            else {commandeenvoieStA.Etat_DCT_Obst = oui_360;}
+ 543   3          }
+ 544   2          // Cas :Résolution angulaire
+ 545   2          if (params[0] == 'A' ) {
+C51 COMPILER V9.59.0.0   F0_M1                                                             04/04/2021 17:16:12 PAGE 10  
 
- 483   1        if (strcmp(params, "IPO") == 0) {
- 484   2          // Valeurs par défaults
- 485   2          commandeenvoieStA.Etat_Position = Init_Position;
- 486   2          commandeenvoieStA.Pos_Angle = 0;
- 487   2          // Boucle pour récupérer les paramètres
- 488   2          while (fin_commande == 0) {
- 489   3            // Récupération des paramètres
- 490   3            ptrcommande = split_element(ptrcommande);
- 491   3            args = param_complexe(params);
- 492   3            // Différents cas : 
- 493   3            if ( args.param == 'X') { commandeenvoieStA.Pos_Coord_X = args.valeur; } 
- 494   3            if ( args.param == 'Y') { commandeenvoieStA.Pos_Coord_Y = args.valeur; }
- 495   3            if ( args.param == 'A') { commandeenvoieStA.Pos_Angle = args.valeur; }
- 496   3          }
- 497   2          // Sinon : Récupération de coord
- 498   2        } else {commandeenvoieStA.Etat_Position = Demande_Position;}      
- 499   1      }
- 500          
- 501          void Convertion_Lumineux(char* params, char* ptrcommande) {
- 502   1        // But : Fonction de gestion du pointeur lumineux
- 503   1        // Input : 
- 504   1        //    - *mouvement : pointeur pour connaitre le type de commandes 
- 505   1        //    - *ptrcommande : pointeur vers les paramètres possibles 
- 506   1        // Output : 
- 507   1        //    none
- 508   1        // Cas : Fin  
- 509   1        if (strcmp(params, "LS") == 0) {
- 510   2          commandeenvoieStA.Etat_Lumiere = Eteindre;
- 511   2          // Cas : Initialisation 
- 512   2        } else {
- 513   2          // Valeurs par défaults
- 514   2          commandeenvoieStA.Etat_Lumiere = Allumer;
- 515   2          commandeenvoieStA.Lumiere_Intensite = 100;      
- 516   2          commandeenvoieStA.Lumiere_Duree = 99;
- 517   2          commandeenvoieStA.Lumire_Extinction = 0;
- 518   2          commandeenvoieStA.Lumiere_Intensite = 1;
- 519   2          // Boucle pour récupérer les paramètres 
- 520   2          while (fin_commande == 0) {
- 521   3            // Récupérations et convertions des paramètres 
- 522   3            ptrcommande = split_element(ptrcommande);
- 523   3            // Si l'argument est complexe
- 524   3            if (params[1] == ':') {
- 525   4              args = param_complexe(params);
- 526   4              // Différents cas possibles 
- 527   4              if ( args.param == 'I') {
- 528   5                if ( args.valeur > 0 && args.valeur < 101) {
- 529   6                  commandeenvoieStA.Lumiere_Intensite = args.valeur;
- 530   6                }
- 531   5              } else if ( args.param == 'D') {
- 532   5                if ( args.valeur > 0 && args.valeur < 101) {
- 533   6                  commandeenvoieStA.Lumiere_Duree = args.valeur;
- 534   6                }
- 535   5              } else if ( args.param == 'E') {
- 536   5                if ( args.valeur > 0 && args.valeur < 101) {
- 537   6                  commandeenvoieStA.Lumire_Extinction = args.valeur;
- 538   6                }
- 539   5              } else if ( args.param == 'N') {
- 540   5                if ( args.valeur > 0 && args.valeur < 101) {
- 541   6                  commandeenvoieStA.Lumiere_Nbre = args.valeur;
- 542   6                }
- 543   5              }
- 544   4              
-C51 COMPILER V9.60.0.0   F0_M1                                                             03/30/2021 17:39:39 PAGE 10  
+ 546   3            args = param_complexe(params);
+ 547   3            if (args.valeur > 5 && args.valeur < 45) {commandeenvoieStA.DCT_Obst_Resolution = args.valeur;}
+ 548   3            else { commandeenvoieStA.DCT_Obst_Resolution = 30; }
+ 549   3          } 
+ 550   2        }
+ 551   1      }
+ 552          void Convertion_Servomoteur(char* ptrcommande) {  
+ 553   1        // But : Fonction de gestion des servomoteurs
+ 554   1        // Input : 
+ 555   1        //    - *ptrcommande : pointeur vers les paramètres possibles 
+ 556   1        // Output : 
+ 557   1        //    none
+ 558   1        // Valeurs par défauts
+ 559   1        commandeenvoieStA.Servo_Angle = 0;
+ 560   1        commandeenvoieStA.Etat_Servo = Servo_H;
+ 561   1        // Tant que l'on a des paramètres : 
+ 562   1        while (fin_commande == 0) {
+ 563   2          // Récupération des paramètres
+ 564   2          ptrcommande = split_element_M1(ptrcommande);
+ 565   2          
+ 566   2          // Cas : Servomoteur Horizontale
+ 567   2          if (params[0] == 'H') { commandeenvoieStA.Etat_Servo = Servo_H; }
+ 568   2          // Cas : Servomoteur Verticale
+ 569   2          if (params[0] == 'V') { 
+ 570   3            commandeenvoieStA.Etat_Servo = Servo_V; }
+ 571   2          // Ajout de l'angle
+ 572   2          if (params[0] == 'A') {
+ 573   3            args = param_complexe(params);  
+ 574   3            commandeenvoieStA.Servo_Angle = args.valeur;
+ 575   3          }
+ 576   2        }
+ 577   1      }
+ 578          
+ 579          void Convertion_Coord(char* params,char* ptrcommande) { 
+ 580   1        // But : Fonction de gestion des coordonnées
+ 581   1        // Input : 
+ 582   1        //    - *params : pointeur vers le type de commande
+ 583   1        //    - *ptrcommande : pointeur vers les paramètres possibles 
+ 584   1        // Output : 
+ 585   1        //    none
+ 586   1        // Cas : Initialisation de coord
+ 587   1        if (strcmp(params, "IPO") == 0) {
+ 588   2          // Valeurs par défaults
+ 589   2          commandeenvoieStA.Etat_Position = Init_Position;
+ 590   2          commandeenvoieStA.Pos_Angle = 0;
+ 591   2          // Boucle pour récupérer les paramètres
+ 592   2          while (fin_commande == 0) {
+ 593   3            // Récupération des paramètres
+ 594   3            ptrcommande = split_element_M1(ptrcommande);
+ 595   3            args = param_complexe(params);
+ 596   3            // Différents cas : 
+ 597   3            if ( args.param == 'X') { commandeenvoieStA.Pos_Coord_X = args.valeur; } 
+ 598   3            if ( args.param == 'Y') { commandeenvoieStA.Pos_Coord_Y = args.valeur; }
+ 599   3            if ( args.param == 'A') { commandeenvoieStA.Pos_Angle = args.valeur; }
+ 600   3          }
+ 601   2          // Sinon : Récupération de coord
+ 602   2        } else {commandeenvoieStA.Etat_Position = Demande_Position;}      
+ 603   1      }
+ 604          
+ 605          void Convertion_Lumineux(char* params, char* ptrcommande) {
+ 606   1        // But : Fonction de gestion du pointeur lumineux
+ 607   1        // Input : 
+C51 COMPILER V9.59.0.0   F0_M1                                                             04/04/2021 17:16:12 PAGE 11  
 
- 545   4            } // Sinon, ignoré
- 546   3          }
- 547   2        }
- 548   1      }
- 549          
- 550          void Convertion_Photo(char* params, char* ptrcommande) {
- 551   1        // But : Fonction de gestion des photos
- 552   1        // Input : 
- 553   1        //    - *params : pointeur pour connaitre le type de commandes 
- 554   1        //    - *ptrcommande : pointeur vers les paramètres possibles 
- 555   1        // Output : 
- 556   1        //    none
- 557   1        // Cas : Initialisation  
- 558   1        if (strcmp(params, "PPH") == 0) {
- 559   2          // Valeurs par défaut 
- 560   2          commandeenvoieStA.Etat_Photo = Photo_1;
- 561   2          commandeenvoieStA.Photo_Duree = 1;
- 562   2          commandeenvoieStA.Photo_Nbre = 1;
- 563   2          
- 564   2          while (fin_commande == 0) {
- 565   3            // Récupérations et convertions des paramètres 
- 566   3            ptrcommande = split_element(ptrcommande);
- 567   3            // Différents cas possibles 
- 568   3            if ( params[0] == 'O') {
- 569   4              commandeenvoieStA.Etat_Photo = Photo_1;
- 570   4            }
- 571   3            if ( params[0] == 'S') {
- 572   4              commandeenvoieStA.Etat_Photo = Photo_Multiple; 
- 573   4            }
- 574   3            if ( params[0] == 'E') {
- 575   4              args = param_complexe(params);
- 576   4              commandeenvoieStA.Photo_Duree = args.valeur;
- 577   4            }
- 578   3            if ( params[0] == 'N') {
- 579   4              args = param_complexe(params);
- 580   4              commandeenvoieStA.Photo_Nbre = args.valeur;
- 581   4            }
- 582   3          }
- 583   2          // Cas : Fin de photo
- 584   2        } else {
- 585   2            commandeenvoieStA.Etat_Photo = Photo_stop;
- 586   2        }
- 587   1      }
- 588          
- 589          //-----------------------------------------------------------------------------
- 590          // Fonctions Convertion Structure vers String
- 591          //-----------------------------------------------------------------------------
- 592          
- 593          char*  Convertion_A_to_S(struct INFORMATIONS informationenvoieAS) {
- 594   1        // But : Convertion de la structure en string
- 595   1        // Input : 
- 596   1        //    none
- 597   1        // Output : 
- 598   1        //    none
- 599   1        // Initialisation des variables
- 600   1        message_is_set = 0;
- 601   1        ptrmessage = &message[0];
- 602   1        // Différents cas possible 
- 603   1        // Si le message en lien avec l'état 
- 604   1        if (informationenvoieAS.Etat_Invite == Invite_oui && message_is_set==0) {
- 605   2          message_is_set= Convertion_Invite(ptrmessage); 
- 606   2        }
-C51 COMPILER V9.60.0.0   F0_M1                                                             03/30/2021 17:39:39 PAGE 11  
+ 608   1        //    - *mouvement : pointeur pour connaitre le type de commandes_M1 
+ 609   1        //    - *ptrcommande : pointeur vers les paramètres possibles 
+ 610   1        // Output : 
+ 611   1        //    none
+ 612   1        // Cas : Fin  
+ 613   1        if (strcmp(params, "LS") == 0) {
+ 614   2          commandeenvoieStA.Etat_Lumiere = Eteindre;
+ 615   2          // Cas : Initialisation 
+ 616   2        } else {
+ 617   2          // Valeurs par défaults
+ 618   2          commandeenvoieStA.Etat_Lumiere = Allumer;
+ 619   2          commandeenvoieStA.Lumiere_Intensite = 100;      
+ 620   2          commandeenvoieStA.Lumiere_Duree = 99;
+ 621   2          commandeenvoieStA.Lumire_Extinction = 0;
+ 622   2          commandeenvoieStA.Lumiere_Intensite = 1;
+ 623   2          // Boucle pour récupérer les paramètres 
+ 624   2          while (fin_commande == 0) {
+ 625   3            // Récupérations et convertions des paramètres 
+ 626   3            ptrcommande = split_element_M1(ptrcommande);
+ 627   3            // Si l'argument est complexe
+ 628   3            if (params[1] == ':') {
+ 629   4              args = param_complexe(params);
+ 630   4              // Différents cas possibles 
+ 631   4              if ( args.param == 'I') {
+ 632   5                if ( args.valeur > 0 && args.valeur < 101) {
+ 633   6                  commandeenvoieStA.Lumiere_Intensite = args.valeur;
+ 634   6                }
+ 635   5              } else if ( args.param == 'D') {
+ 636   5                if ( args.valeur > 0 && args.valeur < 101) {
+ 637   6                  commandeenvoieStA.Lumiere_Duree = args.valeur;
+ 638   6                }
+ 639   5              } else if ( args.param == 'E') {
+ 640   5                if ( args.valeur > 0 && args.valeur < 101) {
+ 641   6                  commandeenvoieStA.Lumire_Extinction = args.valeur;
+ 642   6                }
+ 643   5              } else if ( args.param == 'N') {
+ 644   5                if ( args.valeur > 0 && args.valeur < 101) {
+ 645   6                  commandeenvoieStA.Lumiere_Nbre = args.valeur;
+ 646   6                }
+ 647   5              }
+ 648   4              
+ 649   4            } // Sinon, ignoré
+ 650   3          }
+ 651   2        }
+ 652   1      }
+ 653          
+ 654          void Convertion_Photo(char* params, char* ptrcommande) {
+ 655   1        // But : Fonction de gestion des photos
+ 656   1        // Input : 
+ 657   1        //    - *params : pointeur pour connaitre le type de commandes_M1 
+ 658   1        //    - *ptrcommande : pointeur vers les paramètres possibles 
+ 659   1        // Output : 
+ 660   1        //    none
+ 661   1        // Cas : Initialisation  
+ 662   1        if (strcmp(params, "PPH") == 0) {
+ 663   2          // Valeurs par défaut 
+ 664   2          commandeenvoieStA.Etat_Photo = Photo_1;
+ 665   2          commandeenvoieStA.Photo_Duree = 1;
+ 666   2          commandeenvoieStA.Photo_Nbre = 1;
+ 667   2          
+ 668   2          while (fin_commande == 0) {
+ 669   3            // Récupérations et convertions des paramètres 
+C51 COMPILER V9.59.0.0   F0_M1                                                             04/04/2021 17:16:12 PAGE 12  
 
- 607   1        // Si le message en lien avec l'arrivé
- 608   1        if (informationenvoieAS.Etat_BUT_Mouvement == BUT_Atteint_oui && message_is_set==0) {
- 609   2          message_is_set= Convertion_Arrive(ptrmessage); 
- 610   2        }
- 611   1        if (informationenvoieAS.Etat_BUT_Servo == BUT_Atteint_oui && message_is_set==0) {
- 612   2          message_is_set= Convertion_Arrive_Servo(ptrmessage,informationenvoieAS); 
- 613   2        }
- 614   1        // Si le message en lien avec le courant
- 615   1        if (informationenvoieAS.Etat_RESULT_Courant == RESULT_Courant_oui && message_is_set==0) {
- 616   2          message_is_set=Convertion_Mesure('I',ptrmessage);
- 617   2        }
- 618   1        // Si le message en lien avec l'énergie
- 619   1        if (informationenvoieAS.Etat_RESULT_Energie == RESULT_Energie_oui && message_is_set==0) {
- 620   2          message_is_set=Convertion_Mesure('E',ptrmessage);
- 621   2        }
- 622   1        // Si le message en lien avec l'angle
- 623   1        if (informationenvoieAS.Etat_RESULT_Position == RESULT_Position_oui && message_is_set==0) {
- 624   2          
- 625   2          message_is_set=Convertion_Position(ptrmessage, informationenvoieAS);
- 626   2        }
- 627   1        // Si le message est initialisé
- 628   1        if (message_is_set==1) {
- 629   2          ptrmessage = ajout_char(ptrmessage, '\r');
- 630   2        }
- 631   1        return &message[0];
- 632   1      } 
- 633          
- 634          char Convertion_Invite(char *ptrmessage) {
- 635   1        // But : Fonction Invité de Commande
- 636   1        // Input : 
- 637   1        //    - *ptrmessage : pointeur vers le char[] poour le message
- 638   1        // Output : 
- 639   1        //    - char : pour vérifier le bo n déroulement 
- 640   1        // Ajout de la partie Information 
- 641   1        ptrmessage = ajout_char(ptrmessage, 'I');
- 642   1        ptrmessage = ajout_char(ptrmessage, ' '); 
- 643   1        // Boucle Tant que le message n'est pas finie  
- 644   1        while(*informationenvoieAtS.MSG_Invit != '\0') {    
- 645   2          ptrmessage = ajout_char(ptrmessage,*informationenvoieAtS.MSG_Invit);
- 646   2        }
- 647   1        return '1';
- 648   1      }
- 649          
- 650          char Convertion_Arrive(char *ptrmessage) {
- 651   1        // But : Fonction Arrivé 
- 652   1        // Input : 
- 653   1        //    - *ptrmessage : pointeur vers le char[] poour le message
- 654   1        // Output : 
- 655   1        //    - char : pour vérifier le bon déroulement 
- 656   1        // Ajout de la partie Information 
- 657   1        ptrmessage = ajout_char(ptrmessage, 'B');
- 658   1        return '1';
- 659   1      }
- 660          
- 661          char Convertion_Arrive_Servo(char *ptrmessage, struct INFORMATIONS informationenvoieAS) {
- 662   1        // But : Fonction Arrivé 
- 663   1        // Input : 
- 664   1        //    - *ptrmessage : pointeur vers le char[] poour le message
- 665   1        // Output : 
- 666   1        //    - char : pour vérifier le bon déroulement 
- 667   1        // Ajout de la partie Information 
- 668   1        strcpy(strings,"ASS ");
-C51 COMPILER V9.60.0.0   F0_M1                                                             03/30/2021 17:39:39 PAGE 12  
+ 670   3            ptrcommande = split_element_M1(ptrcommande);
+ 671   3            // Différents cas possibles 
+ 672   3            if ( params[0] == 'O') {
+ 673   4              commandeenvoieStA.Etat_Photo = Photo_1;
+ 674   4            }
+ 675   3            if ( params[0] == 'S') {
+ 676   4              commandeenvoieStA.Etat_Photo = Photo_Multiple; 
+ 677   4            }
+ 678   3            if ( params[0] == 'E') {
+ 679   4              args = param_complexe(params);
+ 680   4              commandeenvoieStA.Photo_Duree = args.valeur;
+ 681   4            }
+ 682   3            if ( params[0] == 'N') {
+ 683   4              args = param_complexe(params);
+ 684   4              commandeenvoieStA.Photo_Nbre = args.valeur;
+ 685   4            }
+ 686   3          }
+ 687   2          // Cas : Fin de photo
+ 688   2        } else {
+ 689   2            commandeenvoieStA.Etat_Photo = Photo_stop;
+ 690   2        }
+ 691   1      }
+ 692          
+ 693          //-----------------------------------------------------------------------------
+ 694          // Fonctions Convertion Structure vers String
+ 695          //-----------------------------------------------------------------------------
+ 696          
+ 697          void Convertion_A_to_S(struct INFORMATIONS informationenvoieAS) {
+ 698   1        // But : Convertion de la structure en string
+ 699   1        // Input : 
+ 700   1        //    none
+ 701   1        // Output : 
+ 702   1        //    none
+ 703   1        // Initialisation des variables
+ 704   1        message_is_set = 0;
+ 705   1        ptrmessage = &message[0];
+ 706   1        // Différents cas possible 
+ 707   1        // Si le message en lien avec l'état 
+ 708   1        if (informationenvoieAS.Etat_Invite == Invite_oui && message_is_set==0) {
+ 709   2          message_is_set= Convertion_Invite(ptrmessage); 
+ 710   2        }
+ 711   1        // Si le message en lien avec l'arrivé
+ 712   1        if (informationenvoieAS.Etat_BUT_Mouvement == BUT_Atteint_oui && message_is_set==0) {
+ 713   2          message_is_set= Convertion_Arrive(ptrmessage); 
+ 714   2        }
+ 715   1        if (informationenvoieAS.Etat_BUT_Servo == BUT_Atteint_oui && message_is_set==0) {
+ 716   2          message_is_set= Convertion_Arrive_Servo(ptrmessage,informationenvoieAS); 
+ 717   2        }
+ 718   1        // Si le message en lien avec le courant
+ 719   1        if (informationenvoieAS.Etat_RESULT_Courant == RESULT_Courant_oui && message_is_set==0) {
+ 720   2          message_is_set=Convertion_Mesure('I',ptrmessage);
+ 721   2        }
+ 722   1        // Si le message en lien avec l'énergie
+ 723   1        if (informationenvoieAS.Etat_RESULT_Energie == RESULT_Energie_oui && message_is_set==0) {
+ 724   2          message_is_set=Convertion_Mesure('E',ptrmessage);
+ 725   2        }
+ 726   1        // Si le message en lien avec l'angle
+ 727   1        if (informationenvoieAS.Etat_RESULT_Position == RESULT_Position_oui && message_is_set==0) {
+ 728   2          
+ 729   2          message_is_set=Convertion_Position(ptrmessage, informationenvoieAS);
+ 730   2        }
+ 731   1        // Si le message est initialisé
+C51 COMPILER V9.59.0.0   F0_M1                                                             04/04/2021 17:16:12 PAGE 13  
 
- 669   1        ptrstrings = &strings[0];
- 670   1        ptrmessage = ajout_char_string(ptrstrings, ptrmessage);
- 671   1        if (informationenvoieAS.Etat_BUT_Servo == BUT_Servo_V) {
- 672   2          ptrmessage = ajout_char(ptrmessage, 'V');
- 673   2        }
- 674   1        if (informationenvoieAS.Etat_BUT_Servo == BUT_Servo_H) {
- 675   2          ptrmessage = ajout_char(ptrmessage, 'H');
- 676   2        }
- 677   1        return '1';
- 678   1      }
- 679          
- 680          char Convertion_Mesure(char type, char *ptrmessage) {
- 681   1        // But : Fonction Mesure
- 682   1        // Input : 
- 683   1        //    - *ptrmessage : pointeur vers le char[] poour le message
- 684   1        // Output : 
- 685   1        //    - char : pour vérifier le bo n déroulement 
- 686   1        // Ajout de la partie Information 
- 687   1        ptrmessage = ajout_char(ptrmessage, 'K');
- 688   1        // Cas : Courant 
- 689   1        if (type == 'I') {
- 690   2          // Ajout de ' ' et valeur 
- 691   2          ptrmessage = ajout_char(ptrmessage, type);
- 692   2          ptrmessage = ajout_char(ptrmessage, ' ');
- 693   2          ptrbuffer = convertion_int_array(informationenvoieAtS.Mesure_Courant);
- 694   2          ptrmessage = ajout_char_array(ptrbuffer,ptrmessage);
- 695   2          return 1;
- 696   2        }
- 697   1        // Cas : Energie
- 698   1        if (type == 'E') {
- 699   2          // Ajout de ' ' et valeur 
- 700   2          ptrmessage = ajout_char(ptrmessage, type);
- 701   2          ptrmessage = ajout_char(ptrmessage, ' ');
- 702   2          ptrbuffer = convertion_int_array(informationenvoieAtS.Mesure_Energie);
- 703   2          ptrmessage = ajout_char_array(ptrbuffer,ptrmessage);
- 704   2          return 1;
- 705   2        }
- 706   1        ptrmessage--;
- 707   1        return 0;
- 708   1      }
- 709          
- 710          char Convertion_Info_Obstacle(char *ptrmessage) {
- 711   1        // Todo :A comprendre mdrrrr
- 712   1        ptrmessage++;
- 713   1        return 1;
- 714   1      }
- 715          
- 716          char Convertion_Position(char *ptrmessage, struct INFORMATIONS informationenvoieAS) {
- 717   1        strcpy(strings," VPO X:\0");
- 718   1        ptrstrings = &strings[0];
- 719   1        ptrmessage = ajout_char_string(ptrstrings, ptrmessage);
- 720   1        ptrbuffer = convertion_int_array(informationenvoieAS.Pos_Coord_X);
- 721   1        ptrmessage = ajout_char_array(ptrbuffer,ptrmessage);
- 722   1        
- 723   1        strcpy(strings," Y:\0");
- 724   1        ptrstrings = &strings[0]; 
- 725   1        ptrmessage = ajout_char_string(ptrstrings, ptrmessage);
- 726   1        ptrbuffer = convertion_int_array(informationenvoieAS.Pos_Coord_Y);
- 727   1        ptrmessage = ajout_char_array(ptrbuffer,ptrmessage);
- 728   1        
- 729   1        strcpy(strings," A:\0");
- 730   1        ptrstrings = &strings[0]; 
-C51 COMPILER V9.60.0.0   F0_M1                                                             03/30/2021 17:39:39 PAGE 13  
+ 732   1        if (message_is_set==1) {
+ 733   2          ptrmessage = ajout_char(ptrmessage, '\r');
+ 734   2        }
+ 735   1        Send_string_UART0(&message[0]);
+ 736   1      } 
+ 737          
+ 738          char Convertion_Invite(char *ptrmessage) {
+ 739   1        // But : Fonction Invité de Commande
+ 740   1        // Input : 
+ 741   1        //    - *ptrmessage : pointeur vers le char[] poour le message
+ 742   1        // Output : 
+ 743   1        //    - char : pour vérifier le bo n déroulement 
+ 744   1        // Ajout de la partie Information 
+ 745   1        ptrmessage = ajout_char(ptrmessage, 'I');
+ 746   1        ptrmessage = ajout_char(ptrmessage, ' '); 
+ 747   1        // Boucle Tant que le message n'est pas finie  
+ 748   1        while(*informationenvoieAtS.MSG_Invit != '\0') {    
+ 749   2          ptrmessage = ajout_char(ptrmessage,*informationenvoieAtS.MSG_Invit);
+ 750   2        }
+ 751   1        return '1';
+ 752   1      }
+ 753          
+ 754          char Convertion_Arrive(char *ptrmessage) {
+ 755   1        // But : Fonction Arrivé 
+ 756   1        // Input : 
+ 757   1        //    - *ptrmessage : pointeur vers le char[] poour le message
+ 758   1        // Output : 
+ 759   1        //    - char : pour vérifier le bon déroulement 
+ 760   1        // Ajout de la partie Information 
+ 761   1        ptrmessage = ajout_char(ptrmessage, 'B');
+ 762   1        return '1';
+ 763   1      }
+ 764          
+ 765          char Convertion_Arrive_Servo(char *ptrmessage, struct INFORMATIONS informationenvoieAS) {
+ 766   1        // But : Fonction Arrivé 
+ 767   1        // Input : 
+ 768   1        //    - *ptrmessage : pointeur vers le char[] poour le message
+ 769   1        // Output : 
+ 770   1        //    - char : pour vérifier le bon déroulement 
+ 771   1        // Ajout de la partie Information 
+ 772   1        strcpy(strings,"ASS ");
+ 773   1        ptrstrings = &strings[0];
+ 774   1        ptrmessage = ajout_char_string(ptrstrings, ptrmessage);
+ 775   1        if (informationenvoieAS.Etat_BUT_Servo == BUT_Servo_V) {
+ 776   2          ptrmessage = ajout_char(ptrmessage, 'V');
+ 777   2        }
+ 778   1        if (informationenvoieAS.Etat_BUT_Servo == BUT_Servo_H) {
+ 779   2          ptrmessage = ajout_char(ptrmessage, 'H');
+ 780   2        }
+ 781   1        return '1';
+ 782   1      }
+ 783          
+ 784          char Convertion_Mesure(char type, char *ptrmessage) {
+ 785   1        // But : Fonction Mesure
+ 786   1        // Input : 
+ 787   1        //    - *ptrmessage : pointeur vers le char[] poour le message
+ 788   1        // Output : 
+ 789   1        //    - char : pour vérifier le bo n déroulement 
+ 790   1        // Ajout de la partie Information 
+ 791   1        ptrmessage = ajout_char(ptrmessage, 'K');
+ 792   1        // Cas : Courant 
+ 793   1        if (type == 'I') {
+C51 COMPILER V9.59.0.0   F0_M1                                                             04/04/2021 17:16:12 PAGE 14  
 
- 731   1        ptrmessage = ajout_char_string(ptrstrings, ptrmessage);
- 732   1        ptrbuffer = convertion_int_array(informationenvoieAS.Pos_Angle);
- 733   1        ptrmessage = ajout_char_array(ptrbuffer,ptrmessage);
- 734   1        return 1;
- 735   1      }
- 736          
- 737          void prepare_message_random(void) {
- 738   1        message_is_ready = 1;
- 739   1        informationenvoieAtS.Etat_Invite = Invite_oui ;
- 740   1        informationenvoieAtS.MSG_Invit = &ptr_asuppr;
-*** WARNING C182 IN LINE 740 OF F0_M1.c: pointer to different objects
- 741   1      }
+ 794   2          // Ajout de ' ' et valeur 
+ 795   2          ptrmessage = ajout_char(ptrmessage, type);
+ 796   2          ptrmessage = ajout_char(ptrmessage, ' ');
+ 797   2          ptrbuffer = convertion_int_array_M1(informationenvoieAtS.Mesure_Courant);
+ 798   2          ptrmessage = ajout_char_array(ptrbuffer,ptrmessage);
+ 799   2          return 1;
+ 800   2        }
+ 801   1        // Cas : Energie
+ 802   1        if (type == 'E') {
+ 803   2          // Ajout de ' ' et valeur 
+ 804   2          ptrmessage = ajout_char(ptrmessage, type);
+ 805   2          ptrmessage = ajout_char(ptrmessage, ' ');
+ 806   2          ptrbuffer = convertion_int_array_M1(informationenvoieAtS.Mesure_Energie);
+ 807   2          ptrmessage = ajout_char_array(ptrbuffer,ptrmessage);
+ 808   2          return 1;
+ 809   2        }
+ 810   1        ptrmessage--;
+ 811   1        return 0;
+ 812   1      }
+ 813          
+ 814          char Convertion_Info_Obstacle(char *ptrmessage) {
+ 815   1        // Todo :A comprendre mdrrrr
+ 816   1        ptrmessage++;
+ 817   1        return 1;
+ 818   1      }
+ 819          
+ 820          char Convertion_Position(char *ptrmessage, struct INFORMATIONS informationenvoieAS) {
+ 821   1        strcpy(strings," VPO X:\0");
+ 822   1        ptrstrings = &strings[0];
+ 823   1        ptrmessage = ajout_char_string(ptrstrings, ptrmessage);
+ 824   1        ptrbuffer = convertion_int_array_M1(informationenvoieAS.Pos_Coord_X);
+ 825   1        ptrmessage = ajout_char_array(ptrbuffer,ptrmessage);
+ 826   1        
+ 827   1        strcpy(strings," Y:\0");
+ 828   1        ptrstrings = &strings[0]; 
+ 829   1        ptrmessage = ajout_char_string(ptrstrings, ptrmessage);
+ 830   1        ptrbuffer = convertion_int_array_M1(informationenvoieAS.Pos_Coord_Y);
+ 831   1        ptrmessage = ajout_char_array(ptrbuffer,ptrmessage);
+ 832   1        
+ 833   1        strcpy(strings," A:\0");
+ 834   1        ptrstrings = &strings[0]; 
+ 835   1        ptrmessage = ajout_char_string(ptrstrings, ptrmessage);
+ 836   1        ptrbuffer = convertion_int_array_M1(informationenvoieAS.Pos_Angle);
+ 837   1        ptrmessage = ajout_char_array(ptrbuffer,ptrmessage);
+ 838   1        return 1;
+ 839   1      }
+ 840          
+ 841          void prepare_message_random(void) {
+ 842   1        message_is_ready = 1;
+ 843   1        informationenvoieAtS.Etat_Invite = Invite_oui ;
+ 844   1        informationenvoieAtS.MSG_Invit = ptr_asuppr;
+ 845   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   5284    ----
-   CONSTANT SIZE    =     79    ----
-   XDATA SIZE       =    198     155
+   CODE SIZE        =   5571    ----
+   CONSTANT SIZE    =     95    ----
+   XDATA SIZE       =    239     188
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----
-   BIT SIZE         =   ----    ----
+   BIT SIZE         =   ----       1
+C51 COMPILER V9.59.0.0   F0_M1                                                             04/04/2021 17:16:12 PAGE 15  
+
 END OF MODULE INFORMATION.
 
 
-C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

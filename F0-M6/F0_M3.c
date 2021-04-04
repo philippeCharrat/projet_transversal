@@ -11,13 +11,14 @@
 // Declarations Registres et Bits de l'espace SFR
 #include <C8051F020.h>
 #include "c8051F020_SFR16.h"
-#include "M3_Lib_Config_Globale_8051F020.h"
 
 //Variables globales
 char Angle_actuel;
-char temps;
+sbit Commande_H = P1^4;
+long AngleAVise = 2762; // Equivalent a l'angle 0
 
 unsigned char CDE_Servo_H (char Angle){
+	char temps;
 	AngleAVise = 10*Angle;
 	AngleAVise = AngleAVise + 1500;
 	AngleAVise = AngleAVise*1000;
@@ -30,4 +31,16 @@ unsigned char CDE_Servo_H (char Angle){
 	}
 	Angle_actuel = Angle;
 	return temps;
-} 
+}
+
+void Timer4_ISR (void) interrupt 16 {
+		 	T4CON &= ~(1<<7); //TF4 = 1
+		 
+		 if(!Commande_H ){
+			 RCAP4 = 0xFFFF - (36832 - AngleAVise);
+	 }
+		 else {
+			 RCAP4 = 0xFFFF - (AngleAVise);
+		 }
+		 Commande_H = !Commande_H;
+}
