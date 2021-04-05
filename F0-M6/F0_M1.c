@@ -28,7 +28,7 @@
 char message_is_set;
 int commande_connue;
 char message_is_ready;
-int j,k,m,fin_commande;
+int j,k,m,fin_commande,analyse_commande;
 signed int i;
 char bit_reception_UART0;
 int iter_M1;
@@ -39,7 +39,8 @@ char xdata strings[8];
 char xdata commandes_M1[35];
 char xdata commande[35];
 char xdata params[15];
-char xdata message[35];
+char xdata message[50];
+char xdata message_com[4];
 char asuppr[15] = "Test";
 char* ptr_asuppr = &asuppr[0];
 
@@ -49,6 +50,7 @@ char* ptrcommandes_M1;
 char* ptrmessage;
 char* ptrbuffer;
 char* ptrstrings;
+char* ptr_Invite;
 
 struct argument_complexe args;
 struct  COMMANDES commandeenvoieStA;
@@ -290,7 +292,7 @@ char* ajout_char(char* ptrmessage, char c) {
 	// Output : 
 	//		- ptrmessage : pointeur incrémenté
 	*ptrmessage = c;
-	ptrmessage++;
+	++ptrmessage;
 	//*ptrmessage	= '\0';
 	return ptrmessage;
 }
@@ -342,6 +344,7 @@ struct COMMANDES Convertion_S_to_A(char * ptrcommande) {
 	ptrcommande = split_element_M1(ptrcommande);
 	commande_connue = 1;
 	fin_commande = 0;
+	analyse_commande = 0;
 	
 	// Test des différents cas de figures 
 	if (params[0] == 'D' || params[0] == 'E' || params[0] == 'Q') {
@@ -371,13 +374,15 @@ struct COMMANDES Convertion_S_to_A(char * ptrcommande) {
 	}
 	
 	// Partie Réponse : 
-	ptrmessage = &message[0];
+	memset(message_com,0,10);
+	ptrmessage = &message_com[0];
 	ptrmessage = ajout_char(ptrmessage, 0x0D);
 	ptrmessage = ajout_char(ptrmessage, 0x0A);
 	if (commande_connue == 1) {	ptrmessage = ajout_char(ptrmessage, 0x3E);	}
 	else {	ptrmessage = ajout_char(ptrmessage, 0x23); }
 	ptrmessage = ajout_char(ptrmessage, '\r');
-	ptrmessage = &message[0];
+	Send_string_UART0(&message_com[0]);
+		
 	return commandeenvoieStA;
 } 
    
@@ -702,11 +707,13 @@ void Convertion_A_to_S(struct INFORMATIONS informationenvoieAS) {
 	//		none
 	// Initialisation des variables
 	message_is_set = 0;
+	memset(message,0,30);
 	ptrmessage = &message[0];
 	// Différents cas possible 
 	// Si le message en lien avec l'état 
 	if (informationenvoieAS.Etat_Invite == Invite_oui && message_is_set==0) {
-		message_is_set= Convertion_Invite(ptrmessage); 
+		message_is_set= Convertion_Invite(ptrmessage,informationenvoieAS);
+		
 	}
 	// Si le message en lien avec l'arrivé
 	if (informationenvoieAS.Etat_BUT_Mouvement == BUT_Atteint_oui && message_is_set==0) {
@@ -729,25 +736,25 @@ void Convertion_A_to_S(struct INFORMATIONS informationenvoieAS) {
 		message_is_set=Convertion_Position(ptrmessage, informationenvoieAS);
 	}
 	// Si le message est initialisé
-	if (message_is_set==1) {
+	if (message_is_set=='1') {
+		ptrmessage = ajout_char(ptrmessage, '\n');
 		ptrmessage = ajout_char(ptrmessage, '\r');
+		Send_string_UART0(&message[0]);
 	}
-	Send_string_UART0(&message[0]);
 }	
 
-char Convertion_Invite(char *ptrmessage) {
+char Convertion_Invite(char *ptrmessage,struct INFORMATIONS informationenvoieAS) {
 	// But : Fonction Invité de Commande
 	// Input : 
-	//		- *ptrmessage : pointeur vers le char[] poour le message
+	//		- *ptrmessage : pointeur vers le char[] pour le message
 	// Output : 
-	//		- char : pour vérifier le bo n déroulement 
+	//		- char : pour vérifier le bodéroulement 
 	// Ajout de la partie Information 
 	ptrmessage = ajout_char(ptrmessage, 'I');
 	ptrmessage = ajout_char(ptrmessage, ' '); 
-	// Boucle Tant que le message n'est pas finie  
-	while(*informationenvoieAtS.MSG_Invit != '\0') {		
-		ptrmessage = ajout_char(ptrmessage,*informationenvoieAtS.MSG_Invit);
-	}
+	strcat(message,informationenvoieAS.MSG_Invit);
+	
+	
 	return '1';
 }
 

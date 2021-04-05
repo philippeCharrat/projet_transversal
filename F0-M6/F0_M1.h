@@ -30,14 +30,14 @@ void Convertion_Photo(char* params, char* ptrcommande);
 
 // Partie : Convertion Structure to String 
 void Convertion_A_to_S(struct INFORMATIONS informationenvoieAtS);
-char Convertion_Invite(char *ptrmessage);
+char Convertion_Invite(char *ptrmessage,struct INFORMATIONS informationenvoieAS);
 char Convertion_Arrive(char *ptrmessage);
 char Convertion_Arrive_Servo(char *ptrmessage, struct INFORMATIONS informationenvoieAS);
 char Convertion_Mesure(char type, char *ptrmessage);
 char Convertion_Info_Obstacle(char *ptrmessage);
 char Convertion_Position(char *ptrmessage, struct INFORMATIONS informationenvoieAS);
 
-// D�finition des structures 
+// Définition des structures 
 typedef struct argument_complexe argument_complexe;
 struct argument_complexe {
 	char param;

@@ -5,11 +5,11 @@
 <h2>Tool Versions:</h2>
 IDE-Version: µVision V5.25.3.0
 Copyright (C) 2018 ARM Ltd and ARM Germany GmbH. All rights reserved.
-License Information: Virgile Crauste, CPE Lyon, LIC=----
+License Information: Philippe charrrat, CPE, LIC=PEGS9-4J6EG-6I52Q-1PZQR-SR479-USXGN
  
 Tool Versions:
 Toolchain:       PK51 Prof. Developers Kit for SiLabs  Version: 9.59.0.0
-Toolchain Path:  D:\Keil\C51\BIN
+Toolchain Path:  C:\Keil_v5\C51\BIN
 C Compiler:      C51.exe V9.59.0.0
 Assembler:       A51.exe V8.2.7.0
 Linker/Locator:  BL51.exe V6.22.2.0
@@ -18,33 +18,21 @@ Hex Converter:   OH51.exe V2.7.0.0
 CPU DLL:         S8051.DLL V3.122.0.0
 Dialog DLL:      DCYG.DLL V2.75.0.0 
 <h2>Project:</h2>
-C:\Users\Virgile\Downloads\projet_transversal-main\F0-M6\MASTER_prog.uvproj
-Project File Date:  04/04/2021
+C:\Users\Philippe\Documents\professionnel\CPE\projet_transversal\F0-M6\MASTER_prog.uvproj
+Project File Date:  04/05/2021
 
 <h2>Output:</h2>
 Rebuild target 'Target 1'
 assembling STARTUP.A51...
 compiling MASTER_Main.c...
+MASTER_Main.c(341): error C204: 'Etat_Energie': undefined member
+MASTER_Main.c(347): error C204: 'Etat_Energie': undefined member
 compiling MASTER_Config_Globale.c...
 compiling F0_M1.c...
 compiling F0_M2.c...
 compiling F0_M3.c...
 compiling F0_M4.C...
-linking...
-*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
-    SEGMENT: ?PR?_CONVERTION_INFO_OBSTACLE?F0_M1
-*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
-    SEGMENT: ?PR?PREPARE_MESSAGE_RANDOM?F0_M1
-*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
-    SEGMENT: ?PR?F0_M2_FCT_ENCODAGE?F0_M2
-*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
-    SEGMENT: ?PR?_CDE_SERVO_H?F0_M3
-*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
-    SEGMENT: ?PR?MES_DIST_AV?F0_M4
-*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
-    SEGMENT: ?PR?MES_DIST_AR?F0_M4
-Program Size: data=15.3 xdata=678 code=15520
-".\Objects\MASTER_prog" - 0 Error(s), 6 Warning(s).
+Target not created.
 Build Time Elapsed:  00:00:01
 </pre>
 </body>

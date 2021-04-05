@@ -31,16 +31,16 @@
 
 // Prototypes de Fonctions
 
-// Variables g�n�rales
+// Variables générales
 
 // Partie : Interruption
 	
 //Variables globales
 char temps;
 char demande_pids = 0;
-
 // 
 unsigned int distance;
+int changement;
 
 // Strucutre 
 struct COMMANDES commandeCentraleCommande = {
@@ -103,65 +103,74 @@ void main (void) {
 	{
 		commandeCentraleCommande = recuperation_structure_commande(commandeCentraleCommande);
 		informationsSerializer = recuperation_structure_serializer(informationsSerializer);
-
+		changement = 0;
 		// ------------------------- Gestion de l'epreuvre ---------------------------------------------
 		
 		switch (commandeCentraleCommande.Etat_Epreuve)
         {
         case epreuve1:
-			informationsCentraleCommande.Etat_Invite = Invite_oui;
-			informationsCentraleCommande.MSG_Invit = "Epreuve 1 start !";
-			
-			commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
-            break;
+					changement = 1;
+					informationsCentraleCommande.Etat_Invite = Invite_oui;
+					informationsCentraleCommande.MSG_Invit = "Epreuve 1 start !\0";
+					commandeCentraleCommande.Etat_Epreuve = Epreuve_non;
+          break;
+				
         case epreuve2:
-			informationsCentraleCommande.Etat_Invite = Invite_oui;
-			informationsCentraleCommande.MSG_Invit = "Epreuve 2 start !";
-			
-			commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
-            break;
+					changement = 1;
+					informationsCentraleCommande.Etat_Invite = Invite_oui;
+					informationsCentraleCommande.MSG_Invit = "Epreuve 2 start !\0";
+					commandeCentraleCommande.Etat_Epreuve = Epreuve_non;
+          break;
+				
         case epreuve3:
-			informationsCentraleCommande.Etat_Invite = Invite_oui;
-			informationsCentraleCommande.MSG_Invit = "Epreuve 3 start !";
-			
-			commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
-            break;
-        case epreuve4:
-			informationsCentraleCommande.Etat_Invite = Invite_oui;
-			informationsCentraleCommande.MSG_Invit = "Epreuve 4 start !";
-			
-			commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
-            break;
+					changement = 1;
+					informationsCentraleCommande.Etat_Invite = Invite_oui;
+					informationsCentraleCommande.MSG_Invit = "Epreuve 3 start !\0";
+					commandeCentraleCommande.Etat_Epreuve = Epreuve_non;
+          break;
+        
+				case epreuve4:
+					changement = 1;
+					informationsCentraleCommande.Etat_Invite = Invite_oui;				
+					informationsCentraleCommande.MSG_Invit = "Epreuve 4 start !\0";
+					commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
+          break;
+				
         case epreuve5:
-			informationsCentraleCommande.Etat_Invite = Invite_oui;
-			informationsCentraleCommande.MSG_Invit = "Epreuve 5 start !";
-			
-			commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
-            break;
+					changement = 1;
+					informationsCentraleCommande.Etat_Invite = Invite_oui;
+					informationsCentraleCommande.MSG_Invit = "Epreuve 5 start !\0";					
+					commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
+          break;
+				
         case epreuve6:
-			informationsCentraleCommande.Etat_Invite = Invite_oui;
-			informationsCentraleCommande.MSG_Invit = "Epreuve 6 start !";
-			
-			commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
-            break;
+					changement = 1;
+					informationsCentraleCommande.Etat_Invite = Invite_oui;
+					informationsCentraleCommande.MSG_Invit = "Epreuve 6 start !\0";
+					commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
+          break;
+				
         case epreuve7:
-			informationsCentraleCommande.Etat_Invite = Invite_oui;
-			informationsCentraleCommande.MSG_Invit = "Epreuve 7 start !";
-			
-			commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
-            break;
+					changement = 1;
+					informationsCentraleCommande.Etat_Invite = Invite_oui;
+					informationsCentraleCommande.MSG_Invit = "Epreuve 7 start !\0";
+					commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
+          break;
+
         case epreuve8:
-			informationsCentraleCommande.Etat_Invite = Invite_oui;
-			informationsCentraleCommande.MSG_Invit = "Epreuve 8 start !";
-			
-			commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
-            break;
+					changement = 1;
+					informationsCentraleCommande.Etat_Invite = Invite_oui;
+					informationsCentraleCommande.MSG_Invit = "Epreuve 8 start !\0";					
+					commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
+          break;
+				
         case Fin_Epreuve:
-			informationsCentraleCommande.Etat_Invite = Invite_oui;
-			informationsCentraleCommande.MSG_Invit = "Epreuve end !";
-			
-			commandeCentraleCommande.Etat_Epreuve = Epreuve_non;
-            break;
+					changement = 1;
+					informationsCentraleCommande.Etat_Invite = Invite_oui;
+					informationsCentraleCommande.MSG_Invit = "Epreuve end !";					
+					commandeCentraleCommande.Etat_Epreuve = Epreuve_non;
+          break;
+				
         default:
             break;
         }
@@ -329,9 +338,14 @@ void main (void) {
         switch (commandeCentraleCommande.Etat_Energie)
         {
         case Mesure_I:
+					informationsCentraleCommande.Etat_Energie = Mesure_I;
+					changement = 1;
 			//M5
             break;
         case Mesure_E:
+					
+					informationsCentraleCommande.Etat_Energie = Mesure_E;
+					changement = 1;
 			//M5
             break;
         default:
@@ -369,6 +383,8 @@ void main (void) {
         default:
             break;
         }
-			Convertion_A_to_S(informationsCentraleCommande);
+			if (changement == 1) {	
+				Convertion_A_to_S(informationsCentraleCommande);
+			}
 	}
 }

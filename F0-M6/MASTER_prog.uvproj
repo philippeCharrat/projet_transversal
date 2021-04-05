@@ -411,6 +411,16 @@
               <FileType>1</FileType>
               <FilePath>.\F0_M4.C</FilePath>
             </File>
+            <File>
+              <FileName>FO_M1__Structures_COMMANDES_INFORMATIONS_CentraleDeCommande.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\FO_M1__Structures_COMMANDES_INFORMATIONS_CentraleDeCommande.h</FilePath>
+            </File>
+            <File>
+              <FileName>F0_M1.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\F0_M1.h</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
