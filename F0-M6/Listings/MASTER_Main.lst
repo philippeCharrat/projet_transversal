@@ -1,4 +1,4 @@
-C51 COMPILER V9.59.0.0   MASTER_MAIN                                                       04/05/2021 16:58:02 PAGE 1   
+C51 COMPILER V9.59.0.0   MASTER_MAIN                                                       04/06/2021 12:30:38 PAGE 1   
 
 
 C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MASTER_MAIN
@@ -50,7 +50,7 @@ line level    source
   40          char demande_pids = 0;
   41          // 
   42          unsigned int distance;
-  43          int changement;
+  43          
   44          
   45          // Strucutre 
   46          struct COMMANDES commandeCentraleCommande = {
@@ -62,7 +62,7 @@ line level    source
   52              Servo_non, 0,
   53              Energie_non,
   54              Position_non, 0, 0, 0,
-C51 COMPILER V9.59.0.0   MASTER_MAIN                                                       04/05/2021 16:58:02 PAGE 2   
+C51 COMPILER V9.59.0.0   MASTER_MAIN                                                       04/06/2021 12:30:38 PAGE 2   
 
   55              Photo_non, 0, 0
   56            };
@@ -115,302 +115,300 @@ line level    source
  103   1        {
  104   2          commandeCentraleCommande = recuperation_structure_commande(commandeCentraleCommande);
  105   2          informationsSerializer = recuperation_structure_serializer(informationsSerializer);
- 106   2          changement = 0;
- 107   2          // ------------------------- Gestion de l'epreuvre ---------------------------------------------
+ 106   2          // Modif philippe 
+ 107   2          informationsCentraleCommande.Etat_Invite = Invite_non;
  108   2          
- 109   2          switch (commandeCentraleCommande.Etat_Epreuve)
- 110   2              {
- 111   3              case epreuve1:
- 112   3                changement = 1;
- 113   3                informationsCentraleCommande.Etat_Invite = Invite_oui;
- 114   3                informationsCentraleCommande.MSG_Invit = "Epreuve 1 start !\0";
- 115   3                commandeCentraleCommande.Etat_Epreuve = Epreuve_non;
- 116   3                break;
-C51 COMPILER V9.59.0.0   MASTER_MAIN                                                       04/05/2021 16:58:02 PAGE 3   
+ 109   2          // ------------------------- Gestion de l'epreuvre ---------------------------------------------
+ 110   2          
+ 111   2          switch (commandeCentraleCommande.Etat_Epreuve)
+ 112   2              {
+ 113   3                // cas : d'arret d'urgence ?
+ 114   3              case epreuve1:
+ 115   3                informationsCentraleCommande.Etat_Invite = Invite_oui;
+ 116   3                informationsCentraleCommande.MSG_Invit = "Epreuve 1 start !\0";
+C51 COMPILER V9.59.0.0   MASTER_MAIN                                                       04/06/2021 12:30:38 PAGE 3   
 
- 117   3              
- 118   3              case epreuve2:
- 119   3                changement = 1;
- 120   3                informationsCentraleCommande.Etat_Invite = Invite_oui;
- 121   3                informationsCentraleCommande.MSG_Invit = "Epreuve 2 start !\0";
- 122   3                commandeCentraleCommande.Etat_Epreuve = Epreuve_non;
- 123   3                break;
- 124   3              
- 125   3              case epreuve3:
- 126   3                changement = 1;
+ 117   3                commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
+ 118   3                break;
+ 119   3              
+ 120   3              case epreuve2:
+ 121   3                informationsCentraleCommande.Etat_Invite = Invite_oui;
+ 122   3                informationsCentraleCommande.MSG_Invit = "Epreuve 2 start !\0";
+ 123   3                commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
+ 124   3                break;
+ 125   3              
+ 126   3              case epreuve3:
  127   3                informationsCentraleCommande.Etat_Invite = Invite_oui;
  128   3                informationsCentraleCommande.MSG_Invit = "Epreuve 3 start !\0";
- 129   3                commandeCentraleCommande.Etat_Epreuve = Epreuve_non;
+ 129   3                commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
  130   3                break;
  131   3              
  132   3              case epreuve4:
- 133   3                changement = 1;
- 134   3                informationsCentraleCommande.Etat_Invite = Invite_oui;        
- 135   3                informationsCentraleCommande.MSG_Invit = "Epreuve 4 start !\0";
- 136   3                commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
- 137   3                break;
- 138   3              
- 139   3              case epreuve5:
- 140   3                changement = 1;
- 141   3                informationsCentraleCommande.Etat_Invite = Invite_oui;
- 142   3                informationsCentraleCommande.MSG_Invit = "Epreuve 5 start !\0";         
- 143   3                commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
- 144   3                break;
- 145   3              
- 146   3              case epreuve6:
- 147   3                changement = 1;
- 148   3                informationsCentraleCommande.Etat_Invite = Invite_oui;
- 149   3                informationsCentraleCommande.MSG_Invit = "Epreuve 6 start !\0";
- 150   3                commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
- 151   3                break;
- 152   3              
- 153   3              case epreuve7:
- 154   3                changement = 1;
- 155   3                informationsCentraleCommande.Etat_Invite = Invite_oui;
- 156   3                informationsCentraleCommande.MSG_Invit = "Epreuve 7 start !\0";
- 157   3                commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
- 158   3                break;
- 159   3      
- 160   3              case epreuve8:
- 161   3                changement = 1;
- 162   3                informationsCentraleCommande.Etat_Invite = Invite_oui;
- 163   3                informationsCentraleCommande.MSG_Invit = "Epreuve 8 start !\0";         
- 164   3                commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
- 165   3                break;
- 166   3              
- 167   3              case Fin_Epreuve:
- 168   3                changement = 1;
- 169   3                informationsCentraleCommande.Etat_Invite = Invite_oui;
- 170   3                informationsCentraleCommande.MSG_Invit = "Epreuve end !";         
- 171   3                commandeCentraleCommande.Etat_Epreuve = Epreuve_non;
- 172   3                break;
- 173   3              
- 174   3              default:
- 175   3                  break;
- 176   3              }
- 177   2          
- 178   2          // ------------------------- Gestion du type de mouvement ---------------------------------------------
-C51 COMPILER V9.59.0.0   MASTER_MAIN                                                       04/05/2021 16:58:02 PAGE 4   
+ 133   3                informationsCentraleCommande.Etat_Invite = Invite_oui;        
+ 134   3                informationsCentraleCommande.MSG_Invit = "Epreuve 4 start !\0";
+ 135   3                commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
+ 136   3                break;
+ 137   3              
+ 138   3              case epreuve5:
+ 139   3                informationsCentraleCommande.Etat_Invite = Invite_oui;
+ 140   3                informationsCentraleCommande.MSG_Invit = "Epreuve 5 start !\0";         
+ 141   3                commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
+ 142   3                break;
+ 143   3              
+ 144   3              case epreuve6:
+ 145   3                informationsCentraleCommande.Etat_Invite = Invite_oui;
+ 146   3                informationsCentraleCommande.MSG_Invit = "Epreuve 6 start !\0";
+ 147   3                commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
+ 148   3                break;
+ 149   3              
+ 150   3              case epreuve7:
+ 151   3                informationsCentraleCommande.Etat_Invite = Invite_oui;
+ 152   3                informationsCentraleCommande.MSG_Invit = "Epreuve 7 start !\0";
+ 153   3                commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
+ 154   3                break;
+ 155   3      
+ 156   3              case epreuve8:
+ 157   3                informationsCentraleCommande.Etat_Invite = Invite_oui;
+ 158   3                informationsCentraleCommande.MSG_Invit = "Epreuve 8 start !\0";         
+ 159   3                commandeCentraleCommande.Etat_Epreuve = Fin_Epreuve;
+ 160   3                break;
+ 161   3              
+ 162   3              case Fin_Epreuve:
+ 163   3                informationsCentraleCommande.Etat_Invite = Invite_oui;
+ 164   3                informationsCentraleCommande.MSG_Invit = "Epreuve end !";         
+ 165   3                commandeCentraleCommande.Etat_Epreuve = Epreuve_non;
+ 166   3                break;
+ 167   3              
+ 168   3              default:
+ 169   3                  break;
+ 170   3              }
+ 171   2          
+ 172   2          // ------------------------- Gestion du type de mouvement ---------------------------------------------
+ 173   2      
+ 174   2          if (commandeCentraleCommande.Etat_Mouvement == Stopper)
+ 175   2          {
+ 176   3              commandeSerializer.Etat_Commande = Stop;
+ 177   3              commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+ 178   3          }
+C51 COMPILER V9.59.0.0   MASTER_MAIN                                                       04/06/2021 12:30:38 PAGE 4   
 
- 179   2      
- 180   2          if (commandeCentraleCommande.Etat_Mouvement == Stopper)
- 181   2          {
- 182   3              commandeSerializer.Etat_Commande = Stop;
- 183   3              commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
- 184   3          }
- 185   2          else if(commandeCentraleCommande.Etat_Mouvement != Mouvement_non)
- 186   2          {
- 187   3            //Demande si les moteurs sont deja utilises
- 188   3            if(demande_pids == 0)
+ 179   2          else if(commandeCentraleCommande.Etat_Mouvement != Mouvement_non)
+ 180   2          {
+ 181   3            //Demande si les moteurs sont deja utilises
+ 182   3            if(demande_pids == 0)
+ 183   3            {
+ 184   4              commandeSerializer.Etat_Commande = Pids;
+ 185   4              demande_pids = 1;
+ 186   4            }
+ 187   3            // Si on recu la reponse du if precedent
+ 188   3            else if(informationsSerializer.Etat_Response == Rep_pids)
  189   3            {
- 190   4              commandeSerializer.Etat_Commande = Pids;
- 191   4              demande_pids = 1;
- 192   4            }
- 193   3            // Si on recu la reponse du if precedent
- 194   3            else if(informationsSerializer.Etat_Response == Rep_pids)
- 195   3            {
- 196   4              demande_pids = 0;
- 197   4              informationsSerializer.Etat_Response = Reponse_non;
- 198   4              if(informationsSerializer.Read_Pids == 0)
- 199   4              {
- 200   5                switch(commandeCentraleCommande.Etat_Mouvement)
- 201   5                {
- 202   6                case Avancer:
- 203   6                  commandeSerializer.Etat_Commande = mogo_1_2;
- 204   6                  commandeSerializer.Vitesse_Mot1 = (commandeCentraleCommande.Vitesse*28)/100;
- 205   6                  commandeSerializer.Vitesse_Mot2 = (commandeCentraleCommande.Vitesse*28)/100;
- 206   6      
- 207   6                  commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
- 208   6                  break;
- 209   6                case Reculer:
- 210   6                  commandeSerializer.Etat_Commande = mogo_1_2;
- 211   6                  commandeSerializer.Vitesse_Mot1 = -(commandeCentraleCommande.Vitesse*28)/100;
- 212   6                  commandeSerializer.Vitesse_Mot2 = -(commandeCentraleCommande.Vitesse*28)/100;
- 213   6      
- 214   6                  commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
- 215   6                  break;
- 216   6                case Rot_90D:
- 217   6                  commandeSerializer.Etat_Commande = digo_1_2;
- 218   6                  commandeSerializer.Ticks_mot1 = (90/180) * 100;
- 219   6                  commandeSerializer.Ticks_mot2 = (90/180) * 100;
- 220   6                  commandeSerializer.Vitesse_Mot1 = 10;
- 221   6                  commandeSerializer.Vitesse_Mot2 = -10;
- 222   6      
- 223   6                  commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
- 224   6                  break;
- 225   6                case Rot_90G:
- 226   6                  commandeSerializer.Etat_Commande = digo_1_2;
- 227   6                  commandeSerializer.Ticks_mot1 = (90/180) * 100;
- 228   6                  commandeSerializer.Ticks_mot2 = (90/180) * 100;
- 229   6                  commandeSerializer.Vitesse_Mot1 = -10;
- 230   6                  commandeSerializer.Vitesse_Mot2 = 10;
- 231   6      
- 232   6                  commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
- 233   6                  break;
- 234   6                case Rot_180D:
- 235   6                  commandeSerializer.Etat_Commande = digo_1_2;
- 236   6                  commandeSerializer.Ticks_mot1 = 100;
- 237   6                  commandeSerializer.Ticks_mot2 = 100;
- 238   6                  commandeSerializer.Vitesse_Mot1 = 10;
- 239   6                  commandeSerializer.Vitesse_Mot2 = -10;
- 240   6      
-C51 COMPILER V9.59.0.0   MASTER_MAIN                                                       04/05/2021 16:58:02 PAGE 5   
+ 190   4              demande_pids = 0;
+ 191   4              informationsSerializer.Etat_Response = Reponse_non;
+ 192   4              if(informationsSerializer.Read_Pids == 0)
+ 193   4              {
+ 194   5                switch(commandeCentraleCommande.Etat_Mouvement)
+ 195   5                {
+ 196   6                case Avancer:
+ 197   6                  commandeSerializer.Etat_Commande = mogo_1_2;
+ 198   6                  commandeSerializer.Vitesse_Mot1 = (commandeCentraleCommande.Vitesse*28)/100;
+ 199   6                  commandeSerializer.Vitesse_Mot2 = (commandeCentraleCommande.Vitesse*28)/100;
+ 200   6      
+ 201   6                  commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+ 202   6                  break;
+ 203   6                case Reculer:
+ 204   6                  commandeSerializer.Etat_Commande = mogo_1_2;
+ 205   6                  commandeSerializer.Vitesse_Mot1 = -(commandeCentraleCommande.Vitesse*28)/100;
+ 206   6                  commandeSerializer.Vitesse_Mot2 = -(commandeCentraleCommande.Vitesse*28)/100;
+ 207   6      
+ 208   6                  commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+ 209   6                  break;
+ 210   6                case Rot_90D:
+ 211   6                  commandeSerializer.Etat_Commande = digo_1_2;
+ 212   6                  commandeSerializer.Ticks_mot1 = (90/180) * 100;
+ 213   6                  commandeSerializer.Ticks_mot2 = (90/180) * 100;
+ 214   6                  commandeSerializer.Vitesse_Mot1 = 10;
+ 215   6                  commandeSerializer.Vitesse_Mot2 = -10;
+ 216   6      
+ 217   6                  commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+ 218   6                  break;
+ 219   6                case Rot_90G:
+ 220   6                  commandeSerializer.Etat_Commande = digo_1_2;
+ 221   6                  commandeSerializer.Ticks_mot1 = (90/180) * 100;
+ 222   6                  commandeSerializer.Ticks_mot2 = (90/180) * 100;
+ 223   6                  commandeSerializer.Vitesse_Mot1 = -10;
+ 224   6                  commandeSerializer.Vitesse_Mot2 = 10;
+ 225   6      
+ 226   6                  commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+ 227   6                  break;
+ 228   6                case Rot_180D:
+ 229   6                  commandeSerializer.Etat_Commande = digo_1_2;
+ 230   6                  commandeSerializer.Ticks_mot1 = 100;
+ 231   6                  commandeSerializer.Ticks_mot2 = 100;
+ 232   6                  commandeSerializer.Vitesse_Mot1 = 10;
+ 233   6                  commandeSerializer.Vitesse_Mot2 = -10;
+ 234   6      
+ 235   6                  commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+ 236   6                  break;
+ 237   6                case Rot_180G:
+ 238   6                  commandeSerializer.Etat_Commande = digo_1_2;
+ 239   6                  commandeSerializer.Ticks_mot1 = 100;
+ 240   6                  commandeSerializer.Ticks_mot2 = 100;
+C51 COMPILER V9.59.0.0   MASTER_MAIN                                                       04/06/2021 12:30:38 PAGE 5   
 
- 241   6                  commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
- 242   6                  break;
- 243   6                case Rot_180G:
- 244   6                  commandeSerializer.Etat_Commande = digo_1_2;
- 245   6                  commandeSerializer.Ticks_mot1 = 100;
- 246   6                  commandeSerializer.Ticks_mot2 = 100;
- 247   6                  commandeSerializer.Vitesse_Mot1 = -10;
- 248   6                  commandeSerializer.Vitesse_Mot2 = 10;
- 249   6      
- 250   6                  commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
- 251   6                  break;
- 252   6                case Rot_AngD:
- 253   6                  commandeSerializer.Etat_Commande = digo_1_2;
- 254   6                  commandeSerializer.Ticks_mot1 = (abs(commandeCentraleCommande.Angle)/180) * 100;
- 255   6                  commandeSerializer.Ticks_mot2 = (abs(commandeCentraleCommande.Angle)/180) * 100;
- 256   6                  commandeSerializer.Vitesse_Mot1 = 10;
- 257   6                  commandeSerializer.Vitesse_Mot2 = -10;
- 258   6      
- 259   6                  commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
- 260   6                  break;
- 261   6                case Rot_AngG:
- 262   6                  commandeSerializer.Etat_Commande = digo_1_2;
- 263   6                  commandeSerializer.Ticks_mot1 = (abs(commandeCentraleCommande.Angle)/180) * 100;
- 264   6                  commandeSerializer.Ticks_mot2 = (abs(commandeCentraleCommande.Angle)/180) * 100;
- 265   6                  commandeSerializer.Vitesse_Mot1 = -10;
- 266   6                  commandeSerializer.Vitesse_Mot2 = 10;
- 267   6      
- 268   6                  commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
- 269   6                  break;
- 270   6                case Depl_Coord:
- 271   6                  // A faire !
- 272   6                  if(commandeCentraleCommande.Pos_Coord_X = commandeCentraleCommande.Coord_X)
- 273   6                  {
- 274   7                    if(commandeCentraleCommande.Pos_Coord_Y = commandeCentraleCommande.Coord_Y)
- 275   7                    {
- 276   8                      if(commandeCentraleCommande.Pos_Angle = commandeCentraleCommande.Angle)
- 277   8                      {
- 278   9                        commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
- 279   9                      }
- 280   8                    }
- 281   7                  }
- 282   6                  break;
- 283   6                default:
- 284   6                  break;
- 285   6                }
- 286   5              }
- 287   4            }
- 288   3            else
- 289   3            {
- 290   4              commandeSerializer.Etat_Commande = Commande_non;
- 291   4            }
- 292   3          }
- 293   2          switch (commandeCentraleCommande.Etat_ACQ_Son)
- 294   2              {
- 295   3              case ACQ_oui:
- 296   3            //AS1   
- 297   3                  break;
- 298   3              default:
- 299   3                  break;
- 300   3              }
- 301   2      
- 302   2              switch (commandeCentraleCommande.Etat_DCT_Obst)
-C51 COMPILER V9.59.0.0   MASTER_MAIN                                                       04/05/2021 16:58:02 PAGE 6   
+ 241   6                  commandeSerializer.Vitesse_Mot1 = -10;
+ 242   6                  commandeSerializer.Vitesse_Mot2 = 10;
+ 243   6      
+ 244   6                  commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+ 245   6                  break;
+ 246   6                case Rot_AngD:
+ 247   6                  commandeSerializer.Etat_Commande = digo_1_2;
+ 248   6                  commandeSerializer.Ticks_mot1 = (abs(commandeCentraleCommande.Angle)/180) * 100;
+ 249   6                  commandeSerializer.Ticks_mot2 = (abs(commandeCentraleCommande.Angle)/180) * 100;
+ 250   6                  commandeSerializer.Vitesse_Mot1 = 10;
+ 251   6                  commandeSerializer.Vitesse_Mot2 = -10;
+ 252   6      
+ 253   6                  commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+ 254   6                  break;
+ 255   6                case Rot_AngG:
+ 256   6                  commandeSerializer.Etat_Commande = digo_1_2;
+ 257   6                  commandeSerializer.Ticks_mot1 = (abs(commandeCentraleCommande.Angle)/180) * 100;
+ 258   6                  commandeSerializer.Ticks_mot2 = (abs(commandeCentraleCommande.Angle)/180) * 100;
+ 259   6                  commandeSerializer.Vitesse_Mot1 = -10;
+ 260   6                  commandeSerializer.Vitesse_Mot2 = 10;
+ 261   6      
+ 262   6                  commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+ 263   6                  break;
+ 264   6                case Depl_Coord:
+ 265   6                  // A faire !
+ 266   6                  if(commandeCentraleCommande.Pos_Coord_X = commandeCentraleCommande.Coord_X)
+ 267   6                  {
+ 268   7                    if(commandeCentraleCommande.Pos_Coord_Y = commandeCentraleCommande.Coord_Y)
+ 269   7                    {
+ 270   8                      if(commandeCentraleCommande.Pos_Angle = commandeCentraleCommande.Angle)
+ 271   8                      {
+ 272   9                        commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+ 273   9                      }
+ 274   8                    }
+ 275   7                  }
+ 276   6                  break;
+ 277   6                default:
+ 278   6                  break;
+ 279   6                }
+ 280   5              }
+ 281   4            }
+ 282   3            else
+ 283   3            {
+ 284   4              commandeSerializer.Etat_Commande = Commande_non;
+ 285   4            }
+ 286   3          }
+ 287   2          switch (commandeCentraleCommande.Etat_ACQ_Son)
+ 288   2              {
+ 289   3              case ACQ_oui:
+ 290   3            //AS1   
+ 291   3                  break;
+ 292   3              default:
+ 293   3                  break;
+ 294   3              }
+ 295   2      
+ 296   2              switch (commandeCentraleCommande.Etat_DCT_Obst)
+ 297   2              {
+ 298   3              case oui_180:
+ 299   3            //M3 & M4
+ 300   3                  break;
+ 301   3              case oui_360:
+ 302   3            //M3 & M4
+C51 COMPILER V9.59.0.0   MASTER_MAIN                                                       04/06/2021 12:30:38 PAGE 6   
 
- 303   2              {
- 304   3              case oui_180:
- 305   3            //M3 & M4
- 306   3                  break;
- 307   3              case oui_360:
- 308   3            //M3 & M4
- 309   3                  break;
- 310   3              default:
- 311   3                  break;
- 312   3              }
- 313   2      
- 314   2              switch (commandeCentraleCommande.Etat_Lumiere)
- 315   2              {
- 316   3              case Allumer:
- 317   3            //MS1 && S6 && S1
- 318   3                  break;
- 319   3              case Eteindre:
- 320   3            //MS1 && S6 && S1
- 321   3                  break;
- 322   3              default:
- 323   3                  break;
- 324   3              }
- 325   2      
- 326   2              switch (commandeCentraleCommande.Etat_Servo)
- 327   2              {
- 328   3              case Servo_H:
- 329   3                  //M3
- 330   3                  break;
- 331   3              case Servo_V:
- 332   3            //S3
- 333   3                  break;
- 334   3              default:
- 335   3                  break;
- 336   3              }
- 337   2      
- 338   2              switch (commandeCentraleCommande.Etat_Energie)
- 339   2              {
- 340   3              case Mesure_I:
- 341   3                informationsCentraleCommande.Etat_Energie = Mesure_I;
-*** ERROR C204 IN LINE 341 OF MASTER_Main.c: 'Etat_Energie': undefined member
- 342   3                changement = 1;
- 343   3            //M5
- 344   3                  break;
- 345   3              case Mesure_E:
- 346   3                
- 347   3                informationsCentraleCommande.Etat_Energie = Mesure_E;
-*** ERROR C204 IN LINE 347 OF MASTER_Main.c: 'Etat_Energie': undefined member
- 348   3                changement = 1;
- 349   3            //M5
- 350   3                  break;
- 351   3              default:
- 352   3                  break;
- 353   3              }
- 354   2      
- 355   2          switch (commandeCentraleCommande.Etat_Position)
- 356   2              {
- 357   3              case Init_Position:
- 358   3      
- 359   3                  break;
- 360   3              case Demande_Position:
- 361   3            //envoi la position actuelle
- 362   3            informationsCentraleCommande.Etat_RESULT_Position = RESULT_Position_oui;
-C51 COMPILER V9.59.0.0   MASTER_MAIN                                                       04/05/2021 16:58:02 PAGE 7   
+ 303   3                  break;
+ 304   3              default:
+ 305   3                  break;
+ 306   3              }
+ 307   2      
+ 308   2              switch (commandeCentraleCommande.Etat_Lumiere)
+ 309   2              {
+ 310   3              case Allumer:
+ 311   3            //MS1 && S6 && S1
+ 312   3                  break;
+ 313   3              case Eteindre:
+ 314   3            //MS1 && S6 && S1
+ 315   3                  break;
+ 316   3              default:
+ 317   3                  break;
+ 318   3              }
+ 319   2      
+ 320   2              switch (commandeCentraleCommande.Etat_Servo)
+ 321   2              {
+ 322   3              case Servo_H:
+ 323   3                  //M3
+ 324   3                  break;
+ 325   3              case Servo_V:
+ 326   3            //S3
+ 327   3                  break;
+ 328   3              default:
+ 329   3                  break;
+ 330   3              }
+ 331   2      
+ 332   2              switch (commandeCentraleCommande.Etat_Energie)
+ 333   2              {
+ 334   3              case Mesure_I:
+ 335   3            //M5
+ 336   3                  break;
+ 337   3              case Mesure_E:
+ 338   3            //M5
+ 339   3                  break;
+ 340   3              default:
+ 341   3                  break;
+ 342   3              }
+ 343   2      
+ 344   2          switch (commandeCentraleCommande.Etat_Position)
+ 345   2              {
+ 346   3              case Init_Position:
+ 347   3      
+ 348   3                  break;
+ 349   3              case Demande_Position:
+ 350   3            //envoi la position actuelle
+ 351   3            informationsCentraleCommande.Etat_RESULT_Position = RESULT_Position_oui;
+ 352   3            commandeCentraleCommande.Etat_Position = Position_non;
+ 353   3                  break;
+ 354   3              default:
+ 355   3                  break;
+ 356   3              }
+ 357   2      
+ 358   2              switch (commandeCentraleCommande.Etat_Photo)
+ 359   2              {
+ 360   3              case Photo_1:
+ 361   3      
+ 362   3                  break;
+ 363   3              case Photo_Multiple:
+ 364   3      
+C51 COMPILER V9.59.0.0   MASTER_MAIN                                                       04/06/2021 12:30:38 PAGE 7   
 
- 363   3            commandeCentraleCommande.Etat_Position = Position_non;
- 364   3                  break;
- 365   3              default:
- 366   3                  break;
- 367   3              }
- 368   2      
- 369   2              switch (commandeCentraleCommande.Etat_Photo)
- 370   2              {
- 371   3              case Photo_1:
- 372   3      
+ 365   3                  break;
+ 366   3              case Photo_continue:
+ 367   3      
+ 368   3                  break;
+ 369   3              case Photo_stop:
+ 370   3      
+ 371   3                  break;
+ 372   3              default:
  373   3                  break;
- 374   3              case Photo_Multiple:
- 375   3      
- 376   3                  break;
- 377   3              case Photo_continue:
- 378   3      
- 379   3                  break;
- 380   3              case Photo_stop:
- 381   3      
- 382   3                  break;
- 383   3              default:
- 384   3                  break;
- 385   3              }
- 386   2            if (changement == 1) {  
- 387   3              Convertion_A_to_S(informationsCentraleCommande);
- 388   3            }
- 389   2        }
- 390   1      }
+ 374   3              }
+ 375   2          Convertion_A_to_S(informationsCentraleCommande);
+ 376   2          
+ 377   2        }
+ 378   1      }
 
-C51 COMPILATION COMPLETE.  0 WARNING(S),  2 ERROR(S)
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    938    ----
+   CONSTANT SIZE    =    202    ----
+   XDATA SIZE       =     90    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

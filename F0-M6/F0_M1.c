@@ -297,8 +297,12 @@ char* ajout_char(char* ptrmessage, char c) {
 	return ptrmessage;
 }
 
-struct COMMANDES recuperation_structure_commande(struct COMMANDES pCommandeenvoieStA)
-{
+struct COMMANDES recuperation_structure_commande(struct COMMANDES pCommandeenvoieStA){
+	// But : Récupération de la structure commande dans le mains 
+	// Input : 
+	//		- pCommandeenvoieStA  : Une structure de la commande avec les anciennes instructions
+	// Output : 
+	//		- pCommandeenvoieStA  : Une structure de la commande avec les nouvelles instructions
 	// Partie Réception 
 	if (RI0 == 1){
 		commandeenvoieStA = pCommandeenvoieStA;
@@ -351,16 +355,16 @@ struct COMMANDES Convertion_S_to_A(char * ptrcommande) {
 			Convertion_Etat(params[0],ptrcommande);
 	} else if (strcmp(params, "ASS") == 0) { 
 			Convertion_Sonore(ptrcommande);
-	} else if (strcmp(params, "MOB") == 0 ) {
+	} else if (strcmp(params, "MOB") == 0 || strcmp(params, "MOS") == 0 || strcmp(params, "MOU") == 0) {
 			Convertion_Detection(ptrcommande);
 	} else if (strcmp(params, "CS") == 0) {
 			Convertion_Servomoteur(ptrcommande);
 	} else if (strcmp(params, "MI") == 0 || strcmp(params, "ME") == 0 ) {
 			if (strcmp(params, "MI") == 0) {	commandeenvoieStA.Etat_Energie = Mesure_I; }
 			else { commandeenvoieStA.Etat_Energie = Mesure_E;}
-	}else if (strcmp(params, "IPO") == 0 || strcmp(params, "POS") == 0) {
+	} else if (strcmp(params, "IPO") == 0 || strcmp(params, "POS") == 0) {
 			Convertion_Coord(params,ptrcommande);
-	} else if (strcmp(params, "L") == 0 || strcmp(params, "LS") == 0 ) {
+	}	else if (strcmp(params, "L") == 0 || strcmp(params, "LS") == 0 ) {
 			Convertion_Lumineux(params, ptrcommande);
 	}else if (strcmp(params, "PPH") == 0 || strcmp(params, "SPH") == 0 ) {
 			Convertion_Photo(params, ptrcommande);
@@ -484,13 +488,19 @@ void Convertion_Mouvement(char *mouvement, char* ptrcommande) {
 	} 
 }			
 
-void Convertion_Coord_Init(char* ptrcommande)
-{
+void Convertion_Coord_Init(char* ptrcommande) {
+	// But : Modification de l'état sonore
+	// Input : 
+	//		- *ptrcommande : pointeur vers les paramètres possibles 
+	// Output : 
+	//		none
+	// Modification de la structure
+	commandeenvoieStA.Etat_Mouvement =Depl_Coord;
 	while (fin_commande == 0) {
 		// Récupérations et convertions des paramètres 
 		ptrcommande = split_element_M1(ptrcommande);
 		// Si l'argument est complexe
-		if (params[1] == ':') {
+		if (params[1] == ':') { 
 			args = param_complexe(params);
 			// Différents cas possibles 
 			if ( args.param == 'X') {
@@ -533,25 +543,55 @@ void Convertion_Detection(char* ptrcommande) {
 	// Output : 
 	//		none
 	// Valeurs par défauts
-	commandeenvoieStA.DCT_Obst_Resolution = 30;
-	commandeenvoieStA.Etat_DCT_Obst = oui_360;
-	// Boucle des paramètres
-	while (fin_commande == 0) {
-		// Récupération du paramètre
+		if (params[2] == 'U') {
+		commandeenvoieStA.Etat_DCT_Obst =oui_180_unique;
 		ptrcommande = split_element_M1(ptrcommande);
-		// Cas : Angle détection
-		if( params[0] == '1' || params[0] == '0'|| params[0] == '2') {
-			i = int_neg_or_positiv(0, params);
-			if (i == 0) {	commandeenvoieStA.Etat_DCT_Obst = DCT_non;}
-			else if (i == 1) {commandeenvoieStA.Etat_DCT_Obst = oui_180;}
-			else {commandeenvoieStA.Etat_DCT_Obst = oui_360;}
+		if (params[0] == '2') {
+			commandeenvoieStA.Etat_DCT_Obst =oui_360_unique;
 		}
-		// Cas :Résolution angulaire
-		if (params[0] == 'A' ) {
-			args = param_complexe(params);
-			if (args.valeur > 5 && args.valeur < 45) {commandeenvoieStA.DCT_Obst_Resolution = args.valeur;}
-			else { commandeenvoieStA.DCT_Obst_Resolution = 30; }
-		} 
+	}
+	else if (params[2] == 'B') {
+		commandeenvoieStA.DCT_Obst_Resolution = 30;
+		commandeenvoieStA.Etat_DCT_Obst = oui_360;
+		// Boucle des paramètres
+		while (fin_commande == 0) {
+			// Récupération du paramètre
+			ptrcommande = split_element_M1(ptrcommande);
+			// Cas : Angle détection
+			if( params[0] == '1' || params[0] == '0'|| params[0] == '2') {
+				i = int_neg_or_positiv(0, params);
+				if (i == 0) {	commandeenvoieStA.Etat_DCT_Obst = DCT_non;}
+				else if (i == 1) {commandeenvoieStA.Etat_DCT_Obst = oui_180;}
+				else {commandeenvoieStA.Etat_DCT_Obst = oui_360;}
+			}
+			// Cas :Résolution angulaire
+			if (params[0] == 'A' ) {
+				args = param_complexe(params);
+				if (args.valeur > 5 && args.valeur < 45) {commandeenvoieStA.DCT_Obst_Resolution = args.valeur;}
+				else { commandeenvoieStA.DCT_Obst_Resolution = 30; }
+			} 
+		}
+	}	else if (params[2] == 'S') {
+		commandeenvoieStA.DCT_Obst_Resolution = 30;
+		commandeenvoieStA.Etat_DCT_Obst = oui_360_proche;
+		// Boucle des paramètres
+		while (fin_commande == 0) {
+			// Récupération du paramètre
+			ptrcommande = split_element_M1(ptrcommande);
+			// Cas : Angle détection
+			if( params[0] == '1' || params[0] == '0'|| params[0] == '2') {
+				i = int_neg_or_positiv(0, params);
+				if (i == 0) {	commandeenvoieStA.Etat_DCT_Obst = DCT_non;}
+				else if (i == 1) {commandeenvoieStA.Etat_DCT_Obst = oui_180_proche;}
+				else {commandeenvoieStA.Etat_DCT_Obst = oui_360_proche;}
+			}
+			// Cas :Résolution angulaire
+			if (params[0] == 'A' ) {
+				args = param_complexe(params);
+				if (args.valeur > 5 && args.valeur < 45) {commandeenvoieStA.DCT_Obst_Resolution = args.valeur;}
+				else { commandeenvoieStA.DCT_Obst_Resolution = 30; }
+			} 
+		}
 	}
 }
 void Convertion_Servomoteur(char* ptrcommande) {	
