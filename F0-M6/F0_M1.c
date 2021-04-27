@@ -350,8 +350,7 @@ struct COMMANDES Convertion_S_to_A(char * ptrcommande) {
 	fin_commande = 0;
 	analyse_commande = 0;
 	
-	// Test des différents cas de figures 
-	if (params[0] == 'D' || params[0] == 'E' || params[0] == 'Q') {
+	if (strcmp(params, "D") == 0 || strcmp(params, "E") == 0 || strcmp(params, "Q") == 0 ) {
 			Convertion_Etat(params[0],ptrcommande);
 	} else if (strcmp(params, "ASS") == 0) { 
 			Convertion_Sonore(ptrcommande);
@@ -368,10 +367,10 @@ struct COMMANDES Convertion_S_to_A(char * ptrcommande) {
 			Convertion_Lumineux(params, ptrcommande);
 	}else if (strcmp(params, "PPH") == 0 || strcmp(params, "SPH") == 0 ) {
 			Convertion_Photo(params, ptrcommande);
-	} else if (params[0] == 'A' || params[0] == 'B' || params[0] == 'S' || strcmp(params, "RD") == 0 || strcmp(params, "RG") == 0 || strcmp(params, "RC") == 0 || strcmp(params, "RA") == 0|| strcmp(params, "TV") == 0) {
+	} else if (strcmp(params, "A") == 0  || strcmp(params, "B") == 0  || strcmp(params, "S") == 0  || strcmp(params, "RD") == 0 || strcmp(params, "RG") == 0 || strcmp(params, "RC") == 0 || strcmp(params, "RA") == 0|| strcmp(params, "TV") == 0) {
 		if (commandeenvoieStA.Etat_Mouvement != Depl_Coord){
 			Convertion_Mouvement(params,ptrcommande);}
-	} else if (params[0] == 'G'){
+	} else if (strcmp(params, "G") == 0 ){
 			Convertion_Coord_Init(ptrcommande);
 	} else {
 			commande_connue = 0;
