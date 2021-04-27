@@ -15,13 +15,13 @@
 //Variables globales
 char Angle_actuel;
 sbit Commande_H = P1^4;
-long AngleAVise = 2762; // Equivalent a l'angle 0
+long AngleAVise = 2600; // Equivalent a l'angle 0
 
 unsigned char CDE_Servo_H (char Angle){
 	char temps;
 	AngleAVise = 10*Angle;
-	AngleAVise = AngleAVise + 1500;
-	AngleAVise = AngleAVise*1000;
+	AngleAVise = AngleAVise + 1400;
+	AngleAVise = AngleAVise*1010;
 	AngleAVise = AngleAVise/543;
 	if (Angle-Angle_actuel > 0){
 	 temps = (Angle-Angle_actuel)*23/60;

@@ -471,7 +471,7 @@ void Convertion_Mouvement(char *mouvement, char* ptrcommande) {
 			// Cas : Rotation d'un angle
 	} else if (strcmp(mouvement, "RA") == 0) {
 				// Valeurs par défaut 
-				commandeenvoieStA.Etat_Mouvement =Rot_AngD;
+				commandeenvoieStA.Etat_Mouvement = Rot_AngD;
 				commandeenvoieStA.Angle = 90; 
 			if (fin_commande == 0) {
 				ptrcommande = split_element_M1(ptrcommande);
@@ -479,7 +479,7 @@ void Convertion_Mouvement(char *mouvement, char* ptrcommande) {
 				if (params[1] == ':') {
 					args = param_complexe(params);
 					// Cas : Droite ou Gauche
-					if (args.param == 'D') {commandeenvoieStA.Etat_Mouvement =Rot_AngD; }
+					if (args.param == 'D') {commandeenvoieStA.Etat_Mouvement =Rot_AngD;}
 					else if (args.param == 'G'){commandeenvoieStA.Etat_Mouvement =Rot_AngG;}
 					// Ajout de l'angle
 					commandeenvoieStA.Angle = args.valeur;
@@ -777,8 +777,7 @@ void Convertion_A_to_S(struct INFORMATIONS informationenvoieAS) {
 	}
 	// Si le message est initialisé
 	if (message_is_set=='1') {
-		ptrmessage = ajout_char(ptrmessage, '\n');
-		ptrmessage = ajout_char(ptrmessage, '\r');
+		strcat(message,"\n\r");
 		Send_string_UART0(&message[0]);
 	}
 }	
@@ -790,8 +789,7 @@ char Convertion_Invite(char *ptrmessage,struct INFORMATIONS informationenvoieAS)
 	// Output : 
 	//		- char : pour vérifier le bodéroulement 
 	// Ajout de la partie Information 
-	ptrmessage = ajout_char(ptrmessage, 'I');
-	ptrmessage = ajout_char(ptrmessage, ' '); 
+	strcat(message,"I ");
 	strcat(message,informationenvoieAS.MSG_Invit);
 	
 	
@@ -859,7 +857,7 @@ char Convertion_Mesure(char type, char *ptrmessage) {
 }
 
 char Convertion_Info_Obstacle(char *ptrmessage) {
-	// Todo :A comprendre mdrrrr
+	// Todo :A comprendre
 	ptrmessage++;
 	return 1;
 }

@@ -30,17 +30,24 @@
 // ---
 
 // Prototypes de Fonctions
+void Timer0_ISR(void);
 
 // Variables générales
 
 // Partie : Interruption
 	
 //Variables globales
-char temps;
 char demande_pids = 0;
+bit demandeDPL = 0;
+int cpt = 0;
 // 
 unsigned int distance;
+unsigned char tempsH = 0;
+bit finRotH = 0;
+long int cptH = 0;
 
+enum dplcCoord {ROT1,DPL1,ROT2,DPL2,ROT3};
+enum dplcCoord dplc_en_cours = ROT1;
 
 // Strucutre 
 struct COMMANDES commandeCentraleCommande = {
@@ -101,6 +108,8 @@ void main (void) {
 
 	while (1)
 	{
+		commandeSerializer.Etat_Commande = Commande_non;
+		
 		commandeCentraleCommande = recuperation_structure_commande(commandeCentraleCommande);
 		informationsSerializer = recuperation_structure_serializer(informationsSerializer);
 		// Modif philippe 
@@ -197,7 +206,7 @@ void main (void) {
 						commandeSerializer.Etat_Commande = mogo_1_2;
 						commandeSerializer.Vitesse_Mot1 = (commandeCentraleCommande.Vitesse*28)/100;
 						commandeSerializer.Vitesse_Mot2 = (commandeCentraleCommande.Vitesse*28)/100;
-
+					
 						commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
 						break;
 					case Reculer:
@@ -209,73 +218,141 @@ void main (void) {
 						break;
 					case Rot_90D:
 						commandeSerializer.Etat_Commande = digo_1_2;
-						commandeSerializer.Ticks_mot1 = (90/180) * 100;
-						commandeSerializer.Ticks_mot2 = (90/180) * 100;
-						commandeSerializer.Vitesse_Mot1 = 10;
-						commandeSerializer.Vitesse_Mot2 = -10;
+						commandeSerializer.Ticks_mot1 = -540;
+						commandeSerializer.Ticks_mot2 = 540;
+						commandeSerializer.Vitesse_Mot1 = 5;
+						commandeSerializer.Vitesse_Mot2 = 5;
 
 						commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
 						break;
 					case Rot_90G:
 						commandeSerializer.Etat_Commande = digo_1_2;
-						commandeSerializer.Ticks_mot1 = (90/180) * 100;
-						commandeSerializer.Ticks_mot2 = (90/180) * 100;
-						commandeSerializer.Vitesse_Mot1 = -10;
-						commandeSerializer.Vitesse_Mot2 = 10;
+						commandeSerializer.Ticks_mot1 = 540;
+						commandeSerializer.Ticks_mot2 = -540;
+						commandeSerializer.Vitesse_Mot1 = 5;
+						commandeSerializer.Vitesse_Mot2 = 5;
 
 						commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
 						break;
 					case Rot_180D:
 						commandeSerializer.Etat_Commande = digo_1_2;
-						commandeSerializer.Ticks_mot1 = 100;
-						commandeSerializer.Ticks_mot2 = 100;
-						commandeSerializer.Vitesse_Mot1 = 10;
-						commandeSerializer.Vitesse_Mot2 = -10;
+						commandeSerializer.Ticks_mot1 = -1080;
+						commandeSerializer.Ticks_mot2 = 1080;
+						commandeSerializer.Vitesse_Mot1 = 5;
+						commandeSerializer.Vitesse_Mot2 = 5;
 
 						commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
 						break;
 					case Rot_180G:
 						commandeSerializer.Etat_Commande = digo_1_2;
-						commandeSerializer.Ticks_mot1 = 100;
-						commandeSerializer.Ticks_mot2 = 100;
-						commandeSerializer.Vitesse_Mot1 = -10;
-						commandeSerializer.Vitesse_Mot2 = 10;
+						commandeSerializer.Ticks_mot1 = 1080;
+						commandeSerializer.Ticks_mot2 = -1080;
+						commandeSerializer.Vitesse_Mot1 = 5;
+						commandeSerializer.Vitesse_Mot2 = 5;
 
 						commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
 						break;
 					case Rot_AngD:
 						commandeSerializer.Etat_Commande = digo_1_2;
-						commandeSerializer.Ticks_mot1 = (abs(commandeCentraleCommande.Angle)/180) * 100;
-						commandeSerializer.Ticks_mot2 = (abs(commandeCentraleCommande.Angle)/180) * 100;
-						commandeSerializer.Vitesse_Mot1 = 10;
-						commandeSerializer.Vitesse_Mot2 = -10;
+						commandeSerializer.Ticks_mot1 = -(abs((float)commandeCentraleCommande.Angle)/180.0) * 1080;
+						commandeSerializer.Ticks_mot2 = (abs((float)commandeCentraleCommande.Angle)/180.0) * 1080;
+						commandeSerializer.Vitesse_Mot1 = 5;
+						commandeSerializer.Vitesse_Mot2 = 5;
 
 						commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
 						break;
 					case Rot_AngG:
 						commandeSerializer.Etat_Commande = digo_1_2;
-						commandeSerializer.Ticks_mot1 = (abs(commandeCentraleCommande.Angle)/180) * 100;
-						commandeSerializer.Ticks_mot2 = (abs(commandeCentraleCommande.Angle)/180) * 100;
-						commandeSerializer.Vitesse_Mot1 = -10;
-						commandeSerializer.Vitesse_Mot2 = 10;
+						commandeSerializer.Ticks_mot1 = (abs((float)commandeCentraleCommande.Angle)/180.0) * 1080;
+						commandeSerializer.Ticks_mot2 = -(abs((float)commandeCentraleCommande.Angle)/180.0) * 1080;
+						commandeSerializer.Vitesse_Mot1 = 5;
+						commandeSerializer.Vitesse_Mot2 = 5;
 
 						commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
 						break;
 					case Depl_Coord:
-						// A faire !
-						if(commandeCentraleCommande.Pos_Coord_X = commandeCentraleCommande.Coord_X)
+						if(demandeDPL == 0)
 						{
-							if(commandeCentraleCommande.Pos_Coord_Y = commandeCentraleCommande.Coord_Y)
+							demandeDPL = 1;
+							switch(dplc_en_cours)
 							{
-								if(commandeCentraleCommande.Pos_Angle = commandeCentraleCommande.Angle)
-								{
-									commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
-								}
+								case ROT1:
+									//Send_string_UART0("ROT1");
+									commandeSerializer.Etat_Commande = digo_1_2;
+									commandeSerializer.Ticks_mot1 = -540;
+									commandeSerializer.Ticks_mot2 = 540;
+									commandeSerializer.Vitesse_Mot1 = 5;
+									commandeSerializer.Vitesse_Mot2 = 5;
+									break;
+								case DPL1:
+									Send_string_UART0("DPL1");
+									commandeSerializer.Etat_Commande = digo_1_2;
+									commandeSerializer.Ticks_mot1 = 3150;
+									commandeSerializer.Ticks_mot2 = 3150;
+									commandeSerializer.Vitesse_Mot1 = 10;
+									commandeSerializer.Vitesse_Mot2 = 10;
+									break;
+								case ROT2:
+									Send_string_UART0("ROT2");
+									commandeSerializer.Etat_Commande = digo_1_2;
+									commandeSerializer.Ticks_mot1 = -540;
+									commandeSerializer.Ticks_mot2 = 540;
+									commandeSerializer.Vitesse_Mot1 = 5;
+									commandeSerializer.Vitesse_Mot2 = 5;
+									break;
+								case DPL2:
+									Send_string_UART0("DPL2");
+									commandeSerializer.Etat_Commande = digo_1_2;
+									commandeSerializer.Ticks_mot1 = 3150;
+									commandeSerializer.Ticks_mot2 = 3150;
+									commandeSerializer.Vitesse_Mot1 = 10;
+									commandeSerializer.Vitesse_Mot2 = 10;
+									break;
+								case ROT3:
+									Send_string_UART0("ROT3");
+									commandeSerializer.Etat_Commande = digo_1_2;
+									commandeSerializer.Ticks_mot1 = -540;
+									commandeSerializer.Ticks_mot2 = 540;
+									commandeSerializer.Vitesse_Mot1 = 5;
+									commandeSerializer.Vitesse_Mot2 = 5;
+									break;
 							}
 						}
 						break;
 					default:
 						break;
+					}
+				}
+				else
+				{
+					Send_string_UART0("TAMERE");
+					if(commandeCentraleCommande.Etat_Mouvement == Depl_Coord)
+					{
+						Send_string_UART0("TEST");
+						if(demandeDPL == 1)
+						{
+							demandeDPL = 0;
+							Send_string_UART0("CHANGEMENT");
+							switch(dplc_en_cours)
+							{
+								case ROT1:
+									dplc_en_cours = DPL1;
+									break;
+								case DPL1:
+									dplc_en_cours = ROT2;
+									break;
+								case ROT2:
+									dplc_en_cours = DPL2;
+									break;
+								case DPL2:
+									dplc_en_cours = ROT3;
+									break;
+								case ROT3:
+									dplc_en_cours = ROT1;
+									commandeCentraleCommande.Etat_Mouvement = Mouvement_non;
+									break;
+								}
+							}
 					}
 				}
 			}
@@ -320,7 +397,9 @@ void main (void) {
         switch (commandeCentraleCommande.Etat_Servo)
         {
         case Servo_H:
-            //M3
+				tempsH = CDE_Servo_H(commandeCentraleCommande.Servo_Angle);
+				commandeCentraleCommande.Etat_Servo = Servo_non;
+				TR0 = 1;
             break;
         case Servo_V:
 			//S3
@@ -348,7 +427,6 @@ void main (void) {
             break;
         case Demande_Position:
 			//envoi la position actuelle
-			informationsCentraleCommande.Etat_RESULT_Position = RESULT_Position_oui;
 			commandeCentraleCommande.Etat_Position = Position_non;
             break;
         default:
@@ -372,7 +450,23 @@ void main (void) {
         default:
             break;
         }
+		if(finRotH == 1 && informationsCentraleCommande.Etat_Invite != Invite_oui)
+		{
+			informationsCentraleCommande.Etat_Invite = Invite_oui;
+			informationsCentraleCommande.MSG_Invit = "AS H";
+			finRotH = 0;
+		}
+		F0_M2_fct_encodage(commandeSerializer);
 		Convertion_A_to_S(informationsCentraleCommande);
-		
+	}
+}
+
+void Timer0_ISR (void) interrupt 1 {
+	cptH++;
+	if(cptH >= 100*tempsH)
+	{
+		finRotH = 1;
+		cptH = 0;
+		TR0 = 0;
 	}
 }

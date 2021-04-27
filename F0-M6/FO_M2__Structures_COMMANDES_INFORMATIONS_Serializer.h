@@ -37,9 +37,9 @@ typedef struct COMMANDES_SERIALIZER  // Cette structure contient toutes les comm
    int   Set_I;                    // paramètre commande vpid dpid
    int   Set_D;                    // paramètre commande vpid dpid
    int   Set_L_A;                  // paramètre commande vpid (L)  dpid (A)
-   int   Ticks_mot1;               // paramètre Distance - Encoder Ticks moteur 1 (digo)
+   signed int   Ticks_mot1;               // paramètre Distance - Encoder Ticks moteur 1 (digo)
    SIGNED_BYTE  Vitesse_Mot1;      // paramètre de vitesse de rotation du moteur 1  (mogo digo)
-   int   Ticks_mot2;               // paramètre Distance - Encoder Ticks moteur 2 (digo)
+   signed int   Ticks_mot2;               // paramètre Distance - Encoder Ticks moteur 2 (digo)
    SIGNED_BYTE  Vitesse_Mot2;      // paramètre de vitesse de rotation du moteur 2 (mogo digo)
 };
 

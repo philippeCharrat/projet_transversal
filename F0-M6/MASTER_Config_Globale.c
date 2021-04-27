@@ -26,12 +26,16 @@ void Port_IO_init(void){
 	
 	XBR0 = (1<<2);
 	XBR2 = 0x44;
-
+	
+	P0MDOUT |= (1<<0);
+	P0MDOUT &= ~(1<<1);
+	P0MDOUT |= (1<<2);
+	P0MDOUT &= ~(1<<3);
 	P1MDOUT |= 0x01; //P1.0 en Push-Pull (sortie) : ENVOI_AV
 	P1MDOUT |= 0x02; //P1.1 en Push-Pull (sortie) : ENVOI_AR
 	P1MDOUT &= ~0x04; //P1.2 en Open-drain (entree) : ECHO_AV
 	P1MDOUT &= ~0x08; //P1.3 en Open-drain (entree) : ECHO_AR
-	P1MDOUT |= (1<<4); //P1.4 en Open-drain (entree) : Commande_H
+	P1MDOUT |= 0x10; //P1.4 en Push-Pull (sortie) : Commande_H
 }
 //-----------------------------------------------------------------------------
 // Initialisation Sources de reset du Microcontr�leur
@@ -58,23 +62,23 @@ void Config_interrupt(){
 
 void Config_Timer() {
 	// But : Configuration du TIMER 1
-	TH1 = 0xDC; //Baud-rate de 19200
-	TCLK0 = 0;
-	RCLK0 = 0;
-	TR1 = 0; //start timer
+	TH1 = 0xB8; //Baud-rate de 19200
+	TF1 = 0;
+	TR1 = 1; //start timer
 	
-	TMOD |= (1<<5);
-	TMOD &= ~(0x11010000);
-	
-	TCON &= ~(0x11000000);
+	TMOD = 0x22;
 	
 	CKCON |= (1<<4);
+	
+	CKCON &= ~(1<<3);
+	ET0 = 1;
+	TH0 = 0x48;
+	TF0 = 0;
+	TR0 = 0;
 	
 	//But Timer 2 : 
 	 T2CON = 0x00;	
 	 RCAP2 = 0x5358; //Reload au temps max d'un signal de echo
-	 //P.226 pour CKCON
-	 CKCON &= ~(0x32);//Utilisation de SYSCLK/12 pour le timer 2	 
 	 
 	 //P.238 pour T2CON
 	 TR2 = 0;//Desactivation de timer2
@@ -95,8 +99,12 @@ void Config_Timer() {
 
 void Config_UART0(void){
 	// But : Configuration de l'UART 0
-	SCON0 = 0x90;
-	SCON1 = 0x90;
+	SCON0 = 0x50;
+	SCON1 = 0x50;
+	PCON |= 0x90;
+	PCON &= ~0x08;
+	
+	ET1 = 0;
 }
 //-----------------------------------------------------------------------------
 // Initialisation globale du Microcontr�leur

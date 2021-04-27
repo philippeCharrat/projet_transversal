@@ -11,6 +11,7 @@
 #include <C8051F020.h>
 #include "c8051F020_SFR16.h"
 #include "FO_M2__Structures_COMMANDES_INFORMATIONS_Serializer.h"
+#include <F0_M1.h>
 #include <F0_M2.h>
 #include <stdio.h>
 #include <string.h>
@@ -60,8 +61,7 @@ void Send_string_M2(char* mot)
         //Check si on est en train de lire le dernier caractere
         if(*(mot+1) == '\0'){
             Send_char_M2(*mot);
-            Send_char_M2(0x0D); //<CR>
-            Send_char_M2('\n');
+            Send_char_M2('\r'); //<CR>
         }
         
         else {
@@ -71,7 +71,6 @@ void Send_string_M2(char* mot)
         //Incremente la case memoire de lecture
         mot++;
     }
-    Send_char_M2('\n');
 }
 
 char extraction(char* ptr_buffer)
@@ -143,7 +142,7 @@ struct INFORMATIONS_SERIALIZER recuperation_structure_serializer(struct INFORMAT
             
         // Récupération du char dans le buffer
         bit_reception_UART1 = SBUF1;
-			
+				Send_char_UART0(bit_reception_UART1);
 		if(bit_reception_UART1 != '>' && bit_reception_UART1 != '\n')
         {
             commandes_M2[iter_M2] = bit_reception_UART1;
@@ -153,7 +152,15 @@ struct INFORMATIONS_SERIALIZER recuperation_structure_serializer(struct INFORMAT
 
         if (bit_reception_UART1 == '\r')
         {
+					if (strcmp(commandes_M2, "ACK") != 0 && strcmp(commandes_M2, "NACK") != 0)
+					{
             STRUCT_SERIALIZER = F0_M2_fct_decodage(STRUCT_SERIALIZER);
+						iter_M2 = 0;
+					}
+					else
+					{
+						memset(commandes_M2,0,35);
+					}
         }
 
         SCON1 |= 0x10; //REN1 = 1;
@@ -250,10 +257,10 @@ void F0_M2_fct_encodage(struct COMMANDES_SERIALIZER structure)
 	if (structure.Etat_Commande == mogo_1_2)
     {
 		strcat(Message,"mogo 1:");
-		sprintf(Tampon,"%d",structure.Vitesse_Mot1);
+		sprintf(Tampon,"%d",(int)structure.Vitesse_Mot1);
 		strcat(Message,Tampon);
 		strcat(Message," 2:");
-		sprintf(Tampon,"%d",structure.Vitesse_Mot2);
+		sprintf(Tampon,"%d",(int)structure.Vitesse_Mot2);
 		strcat(Message,Tampon);		
 	}
 
@@ -304,15 +311,15 @@ void F0_M2_fct_encodage(struct COMMANDES_SERIALIZER structure)
 	if (structure.Etat_Commande == digo_1_2)
     {
 		strcpy(Message,"digo 1:");
-		sprintf(Tampon,"%d:",structure.Ticks_mot1);
+		sprintf(Tampon,"%d:",(int)structure.Ticks_mot1);
 		strcat(Message,Tampon);
-		sprintf(Tampon,"%d ",structure.Vitesse_Mot1);
+		sprintf(Tampon,"%d ",(int)structure.Vitesse_Mot1);
 		strcat(Message,Tampon);
 		
 		strcat(Message,"2:");
-		sprintf(Tampon,"%d:",structure.Ticks_mot2);
+		sprintf(Tampon,"%d:",(int)structure.Ticks_mot2);
 		strcat(Message,Tampon);
-		sprintf(Tampon,"%d",structure.Vitesse_Mot2);
+		sprintf(Tampon,"%d",(int)structure.Vitesse_Mot2);
 		strcat(Message,Tampon);
 	}
 
